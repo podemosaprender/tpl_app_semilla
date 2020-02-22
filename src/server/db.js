@@ -17,8 +17,14 @@ var UserDefJoi= toJoi(tUser);
 var users = [
       ["Podemos","Aprender"],
       ["Los Maestros","Roban"],
-      ["Mauricio","Cap"]
+      ["Mauricio","Cap"],
+			["Hola","Mundo"],
     ];
+var Contextos= {
+			 "batman": {protagonista: "Batman", meta: "salvar ciudad gotica", ayudante: "Alfred", vehiculo: "Batimovil" },
+			 "cenicienta": {protagonista: "Cenicienta", meta: "ir al baile", ayudante: "el hada Madrina", vehiculo: "carroza" },
+			};
+
 
 var QuiereReiniciarLaDb= true; //OjO! Borra los datos
 function load_data(){// populate table with default users
@@ -32,6 +38,15 @@ function load_data(){// populate table with default users
         M.User.create({ firstName: users[i][0], lastName: users[i][1]}); // create a new entry in the users table
       }
     }); 
+
+	M.CuentoContexto.sync({force: true}) //TODO: generalizar tipos de datos y datos iniciales
+    .then(function(){
+			Object.keys(Contextos).forEach( k => {
+				var v= Contextos[k];
+				v.nombre= k;
+				M.CuentoContexto.create(v);
+			});	
+		});
 }
 
 function connect(wantsReconnect) { //U: load_data a new database, using credentials in .env
@@ -57,6 +72,7 @@ function init() {
   .then(function(err) {
     console.log('DB Connection has been established successfully.');
     M.User= Cx.define('users', toSequelize(tUser)); //A: define a new table 'users'
+		M.CuentoContexto= Cx.define('cuentos', toSequelize(tCuentoContexto)); 
 		//TODO: leer de directorio app un archivo de inicio que defina para cada app
   })
   .catch(function (err) {

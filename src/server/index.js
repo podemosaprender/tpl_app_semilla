@@ -328,6 +328,13 @@ app.get("/api/db/users", function (request, response) {
   });
 });
 
+app.get("/api/db/cuentos", function (request, response) {
+  var r=[];
+  Db.M.CuentoContexto.findAll().then(function(elements) { // find all entries in the users tables
+    response.send(elements); 
+  });
+});
+
 // creates a new entry in the users table with the submitted values
 //U: curl 'https://db-sql-tutorial.glitch.me/users?falla=el+que+lee' --data '' => mensaje de error
 app.post("/api/db/users", function (request, response) {
@@ -342,9 +349,25 @@ app.post("/api/db/users", function (request, response) {
   response.sendStatus(200);
 });
 
+app.post("/api/db/cuentos", function (request, response) {
+  var data= {}; Object.keys(tCuentoContexto).forEach( k => { data[k]= request.body[k] });
+  //TODO: validar! var validationResult= Joi.validate(data, UserDefJoi);
+  var validationResult= {};
+  if (validationResult.error==null) {
+		console.log("Creando cuento",data);
+    Db.M.CuentoContexto.create(data)
+		.then( d => response.send(d) );
+  }
+  else {
+    //TODO: response.send(validationResult.error.details);
+    response.send('ERROR');
+  }
+});
+
+
 // drops the table users if it already exists, populates new users table it with just the default users.
 app.get("/api/db/reset", function (request, response) {
-  Db.init_data();
+  Db.load_data();
   response.redirect("/");
 });
 

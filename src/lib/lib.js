@@ -116,6 +116,15 @@ tUser= {
 	email: { _t: 'string', email: { minDomainSegments: 2 } }
 }
 
+tCuentoContexto= {
+	_t: 'object',
+	nombre: tName,
+ 	protagonista: tName,
+	meta: { _t: 'string' },
+	ayudante: tName,
+	vehiculo: tName,
+}
+
 //TODO: joi/sequelize DATETIME=DATE =INTEGER,FLOAT 
 //SEE: https://hapi.dev/family/joi/
 function toJoi(v) { //U: convierte nuestra definicion a la que necesita joi para validar
