@@ -2,7 +2,7 @@
 function cuento(contexto) { return contexto.protagonista+" queria  "+contexto.meta+", aparecio "+contexto.ayudante+", y convirtio una calabaza en "+contexto.vehiculo; }
 
 
-ContextosUrl= "http://192.168.10.104:8888/api/db/cuentos";
+ContextosUrl= "/api/db/cuentos";
 Contextos= null; //U: se cargan del servidor
 function contextosLoad(quiereReload) {
 	if (Contextos!= null && !quiereReload) return (new Promise(r=> r(Contextos))); //A: los cargo una sola vez
@@ -80,7 +80,7 @@ function scr_editar(my) {
 	function onGuardar(valores) {
 		Contextos[valores.contexto]= valores;
 		my.refresh();
-		FetchUrl("http://192.168.10.104:8888/api/db/cuentos",null,null,false,valores,"POST")
+		FetchUrl("/api/db/cuentos",null,null,false,valores,"POST")
 		.then(res => res.text())
 		.then(msg => {
 			contextosLoad(true).then(r => my.refresh()); //A: volver a cargar para actualizar menu
