@@ -1,0 +1,92 @@
+/**
+*	Cómo se maneja la lectura de datos
+*	Puede haber varios formatos
+*   * Separado por tabuladores, tipo tabla
+*       _Cómo el que exportaría cualquier rdbms o planilla de cálculo_
+*   * Separado por tabuladores, tipo "multitabla"
+*       _El primer elemento indíca el tipo de la fila, y de ahí se saben las columnas_
+*
+* Además los X,Y pueden estar indicados 
+*   * como offset desde el origen del archivo
+*       _El punto X=1221,Y=5662 figura con 21,62 en el archivo para Xmin=1200,Ymin=5600_
+*   * en valores absolutos
+*
+* Pero las funciones que buscan (filtran) o dibujan esperan ```streams``` uniformes.
+* La [Fuente de Datos](global.html#datos/in/fuente) debe indicar la plantilla de url [url_patt](global.html#datos/in/url_patt) (por pattern, patrón en inglés) y el formato.
+*
+*	@name datos/in
+*/
+
+/**
+*	La Fuente de Datos
+*	Es un archivo json que describe una vista (ej. una zona) diciendo
+*    * dónde obtener los datos de cada capa y el formato [url_patt](global.html#datos/in/url_patt)
+*        _puede defnir las capas que quiera_
+*    * dónde obtener los simbolos para dibujarlos [url_patt](global.html#datos/in/url_patt)
+*    * dónde obtener los estilos (colores, etc.) para dibujarlos [url_patt](global.html#datos/in/url_patt)
+*    * dónde obtener los datos para búsquedas y el formato [url_patt](global.html#datos/in/url_patt)
+*        _puede definir las búsquedas que quiera, usando los [filtros predefinidos](global.html#datos/in/filtros)_
+*    * búsquedas (con sus formularios y filtros)
+*    * capas (si quiere nombres distintos a los que usó para las url)
+* Puede combinar datos que se consigan online y datos que estén en archivos locales.
+*
+*	@name datos/in/fuente
+*
+* @example
+*	
+*	{
+*		estilo: 'estilo.default.json',
+*		icon: 'icon',
+*		capas: {
+*			"capas": "Manzanas Fachadas Red/Conectores Red/Elementos", //A: puede restringir, sino object.keys
+*			"Calles": "Xtile/5/{Xmin}/{Ymin}/geo/street",
+*			"Manznas": "Xtile/5/{Xmin}/{Ymin}/geo/block",
+*			"Fachadas": "Xtile/5/{Xmin}/{Ymin}/geo/facade",
+*			"Red/Conectores": "Xtile/5/{Xmin}/{Ymin}/net/cx",
+*			"Red/Elementos": "Xtile/5/{Xmin}/{Ymin}/net/e"
+*			"NetAttr": "Xtile/5/{Xmin}/{Ymin}/net/attr",
+*		}
+*	}
+*	
+*/
+
+/**
+*	La Plantilla de Url
+* Unificamos el formato de modo que pueden ser
+*    * url web http o https
+*    * archivos dentro de un .zip en el móvil
+*    * archivos sueltos en el móvil
+*
+*	@name datos/in/url_patt
+*/
+
+/**
+* Filtros de datos
+*    * cercano: según la distancia y xy recibidos como parámetro
+*    * incluye: el texto en la columna recibidos como parámetro
+*    * en_rango: el valor de la columna está entre los límites recibidos como parámetro
+*
+* Obviamente se pueden combinar para filtrar por ej. elementos cercanos de cierto tipo
+*
+* @name datos/in/filtros
+*/
+
+/**
+* Servidores, archivos, y sincronización (in)
+* El caso de uso en la mayoría de los clientes es:
+*    * Generan un archivo .zip para cada zona de interés
+*    * Los usuarios ven la lista completa con su tablet
+*    * Eligen las que quieren poder ver offline
+*    * La aplicación baja la última version del .zip automáticamente
+* Pero es necesario poder pasar los archivos por USB a la tarjeta SD, porque en algunos casos la red no es suficientemente buena para hacerlo así.
+* El usuario necesita verlo de la misma manera, no importa de donde hayan venido.
+* La solución:
+*    * Hay una "lista de proveedores"
+*       * Cada uno tiene su directorio en ```data/in```, y eso es suficiente para que exista y aparezca en la ui
+            _así se pueden simplemente copiar los archivos via usb_
+*       * Además se pueden dar de alta/configurar desde la UI agregando una URL y parámetros para sync (ej. de autenticación)
+*    * La lista de "Zonas" son las fuentes de datos que esten en la tarjeta O (si esta online) en el sitio del proveedor.        
+*    * Para evitar problemas de seguridad, se muestra el nombre del proveedor como prefijo del nombre de la "zona"
+*
+* @name datos/in/servidores_y_sync
+*/

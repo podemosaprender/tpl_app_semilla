@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>Spec Runner</title>
+</head>
+<body>
+	<p id="texto">TEST</p>
+	<div id="mocha"></div>
+	<script src="../node_modules/expect.js/index.js"></script>
+	<script src="../node_modules/mocha/mocha.js"></script>
+	<script src="../node_modules/happen/happen.js"></script>
+	<script src="../node_modules/prosthetic-hand/dist/prosthetic-hand.js"></script>
+	<script src="../node_modules/sinon/pkg/sinon.js"></script>
+
+	<script src="../node_modules/highland/dist/highland.js"></script><script>_=highland;</script>
+	<script src="../node_modules/sprintf-js/dist/sprintf.min.js"></script>
+	<script src="../node_modules/proj4/dist/proj4.js"></script>
+	<script src="../node_modules/crypto-js/crypto-js.js"></script>
+
+  <script type="text/javascript" src="cdvfile://localhost/assets/www/cordova.js"></script>
+
+
+	<!-- source files -->
+	<script>
+		// Trick it into believing we have a touchscreen (for Chrome)
+		if (window.Touch) { window.ontouchstart = function(){} };
+	</script>
+<!-- 	<script src="../build_conf/deps.js"></script> -->
+
+		<!-- r ! for i in `find ../app -type f`; do echo "<script src=\"$i\"></script>" ; done
+			{ -->
+<script src="../src/app/util/logm.js"></script>
+<script src="../src/app/util/streams.js"></script>
+
+<script src="../src/app/util/misc.js"></script>
+<script src="../src/app/util/cache.js"></script>
+<script src="../src/app/util/zip.js"></script>
+<script src="../src/app/util/platform.js"></script>
+<script src="../src/app/util/crypto.js"></script>
+<script src="../src/app/util/serialization.js"></script>
+<script src="../src/app/util/proj.js"></script>
+<script src="../src/app/util/text.js"></script>
+		<!-- } -->
+
+	<script>
+		mocha.setup({
+			ui: 'bdd',
+			ignoreLeaks: true
+		});
+	</script>
+
+	<script src="suites/main.test.js"></script>
+	<script src='suites/util/zip.test.js'></script>
+	<script src='suites/util/archivos_mobile.test.js'></script>
+	<script src='suites/util/crypto.test.js'></script>
+	<script>
+		function runTests() {
+			(window.mochaPhantomJS || window.mocha).run();
+		}
+		if (window._cordovaNative) {
+			document.addEventListener('deviceready', runTests, false);
+		}
+		else {
+			runTests();
+		}
+
+	</script>
+</body>
+</html>

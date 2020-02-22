@@ -1,0 +1,36 @@
+html, body {
+	height: 100%;
+	width: 100%;
+	padding: 0;
+	margin: 0;
+	background: #FAFAFA;
+	font-family: 'Helvetica Neue', arial, sans-serif;
+	font-weight: 400;
+	color: #444;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+
+#app {
+	height: 100%;
+}
+
+#app .page {
+  padding-top: 0px;
+	z-index: 19;
+	position: relative;
+	background: rgba(3,3,3,.6);
+  color: #fff;
+	height: 100%;
+	max-width: 30em;
+  position: fixed;
+  right: 0px;
+}
+
+#app .page-header h1 {
+	margin: 0px;
+  padding: 4px 3px 0px 5px;
+  font-size: 30px;
+}
+
+

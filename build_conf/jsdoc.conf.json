@@ -1,0 +1,56 @@
+{
+	"opts": {
+		"destination": "./doc/ref/",
+		"template": "./node_modules/foodoc/template",
+		"recurse": true,
+	  "encoding": "utf8"    
+	},
+	"source": {
+    "include": ["src","doc","doc/README.md"],
+    "exclude": ["doc/test-results","doc/ref"]
+	},
+  "tags": {
+    "allowUnknownTags": true
+  },
+  "plugins": ["plugins/markdown", "../node_modules/jsdoc-plantuml"],
+  "templates": {
+    "includeDate": true,
+    "dateFormat": "Do MMM YYYY",
+    "systemName": "RedMóvil",
+    "systemSummary": "Mapas técnicos para cuadrillas offline",
+    "systemLogo": "",
+    "systemColor": "#d11",
+    "copyright": "© Prometium 2016-2019.",
+    "linenums": true,
+    "collapseSymbols": true,
+    "inverseNav": true,
+    "inlineNav": false,
+    "outputSourceFiles": true,
+    "outputSourcePath": false,
+    "disablePackagePath": true,
+    "methodHeadingReturns": true,
+    "showTableOfContents": true,
+    "showAccessFilter": false,
+    "sort": "linenum, longname, version, since",
+    "search": true,
+    "stylesheets": [],
+    "scripts": []
+  },
+  "markdown": {
+    "parser": "gfm",
+    "hardwrap": true
+  },
+	"plantuml": {
+		"puml": {
+			"create": true,
+			"destination": "doc/ref/uml"
+		},
+		"images": {
+			"create": true,
+			"destination": "doc/ref/img",
+			"pathLink": "img",
+			"autoName": true,
+			"defaultFormat": "png"
+		}
+	}
+}
