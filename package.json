@@ -44,7 +44,9 @@
       "/node_modules/preact-render-to-string/dist/index.js",
       "/node_modules/linkstate/dist/linkstate.umd.js",
       "/node_modules/semantic-ui-react/dist/umd/semantic-ui-react.min.js",
-      "/node_modules/semantic-ui-forest-themes/**/*"
+      "/node_modules/semantic-ui-forest-themes/**/*",
+			"/node_modules/semantic-ui-calendar-react/**/*",
+      "/node_modules/@hapi/joi/*"
     ],
     "targets": [
       "node10"

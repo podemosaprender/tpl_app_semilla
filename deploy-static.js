@@ -21,5 +21,6 @@ cfg.pkg.assets.forEach(a => {
 	shell.cp('-rf',d,dst);
 });
 shell.mv('',CFG_OUT_DIR+'/src/ui/*',CFG_OUT_DIR);
+shell.mv('',CFG_OUT_DIR+'/src/lib',CFG_OUT_DIR);
 shell.rm('-rf',CFG_OUT_DIR+'/src');
 

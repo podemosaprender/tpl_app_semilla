@@ -7,9 +7,9 @@ function cmp_audio(my) { //U: un componente para reproducir audio
 	my.render= function cmp_audio_render(props) {
 		//eventos interesates onEnded: fLog("ended"), onLoadedmetadata: fLog("load")
 		//SEE: https://www.w3schools.com/tags/ref_av_dom.asp
-		return cmp({cmp: '<audio',controls: true, ... props}, [
-				cmp({cmp:'source',src: props.src , type: "audio/ogg"})
-		]);
+		return cmp({... props, cmp: '<audio',controls: true,  children: [
+				{cmp:'source',src: props.src , type: "audio/ogg"}
+		]});
 	}
 }
 
@@ -30,11 +30,18 @@ function cmp_youtube(my) {
 		}
 	}
 
-	function onPlayerStateChange(props, event) {
-		if (event.data===0) { console.log("YT termino"); }
-
-		if (typeof(props.onChange)=='function') {
-			props.onChange(event);
+	function onPlayerStateChange(props, ev) {
+		if (ev.data===0) { 
+			console.log("YT termino"); 
+			if (typeof(props.onEnded)=='function') {
+				props.onEnded(ev);
+			}
+		}
+		else if (ev.data==null && props.autoplay) {
+			ev.target.playVideo();
+		}
+		else if (typeof(props.onChange)=='function') {
+			props.onChange(ev);
 		}
 	}
 
@@ -50,6 +57,7 @@ function cmp_youtube(my) {
 				player = new YT.Player(divId, {
 					height: props.height || '390', width: props.width || '640',
 					videoId: props.video,
+					playerVars: { autoplay: props.autoplay, controls: props.controls!==false },
 					events: {
 						onReady: e => onPlayerStateChange(props,e),
 						onStateChange: e => onPlayerStateChange(props,e),
@@ -115,9 +123,14 @@ function radioFecth(wantsReload) {
 				programa.audios.push(RADIO_URL+'/'+parts.join('/'));
 			});
 
+			//TODO:EMU
+			RadioIdx['yt']= {titulo: 'Prueba YT', audios: [RADIO_URL+'/audio/c_in.ogg']};
+			RadioIdx['yt'].audios.push('https://www.youtube.com/watch?v=EzKImzjwGyM');
+
 			Object.keys(RadioIdx).forEach(k => 
 				RadioIdx[k].audios.push(RADIO_URL+'/audio/c_out.ogg')
 			);
+
 			return RadioIdx;
 		});
 }
@@ -178,18 +191,21 @@ function scr_radio_$programa(my) { //U: escuchar la radio, un programa, radio/mi
 				contenido= cmpAct(volverAEscuchar,'Volver a escuchar'); 
 			}
 			else { //A: quedan para escuchar
-				var titulo= "(" + audioIdx + "/" + audios.length+") "+audios[audioIdx];
+				var url= audios[audioIdx];
+				var titulo= "(" + audioIdx + "/" + audios.length+") "+url;
+				var youtubeUrl= url.match(/youtu.?be/) && (url.match(/v=([^&]+)/))[1];
 
 				contenido= cmpGroup([
-					h('h4',{},titulo),
-
-					h(Cmp.audio,{
-						src: audios[audioIdx], 
-						onEnded: audioOnEnded, 
-						onLoadedmetadata: audioOnLoadedMetadata, 
-						autoplay: wantsPlay
-					}),
-
+					cmp({cmp: 'h4',txt: titulo}),
+					youtubeUrl
+					? cmp({cmp: 'youtube', onEnded: audioOnEnded, autoplay: wantsPlay, width: 640, height: 480, video: youtubeUrl})
+					: cmp({cmp: 'audio',
+							src: audios[audioIdx], 
+							onEnded: audioOnEnded, 
+							onLoadedmetadata: audioOnLoadedMetadata, 
+							autoplay: wantsPlay
+						})
+					,
 					cmpGroup([ //A: en un div para que quede en una linea saparada
 						cmpAct(audioOnEnded,'Próximo')
 					])

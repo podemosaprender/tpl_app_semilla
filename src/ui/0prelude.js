@@ -44,7 +44,7 @@ function cmpAct() { //U: un elemento accionable tipo boton
 		//A: agregue el icono que me pidio al principio
 	}
 	d.kv.onClick= d.f;
-	return h(d.kv.cmp || Button, d.kv);
+	return h(d.kv.cmp || Cmp.Button, d.kv);
 }
 
 function cmpOut() { //U: elemento de salida tipo div
@@ -64,6 +64,7 @@ function cmp() { //U: elemento "si adivina" que tipo
 	var d= paramsToTypeKv.apply(null,arguments);	
 	//A: separamos los params en kv, array y f
 	d.kv.children= d.kv.children || d.array;
+	console.log("cmp A",d.kv);
 	d.kv.children= (d.kv.children && Array.isArray(d.kv.children)) ? 
 		d.kv.children.map( p => {
 			var isObjectButNotCmp= (typeof(p)=='object' && p.$$typeof!=Symbol.for("react.element"));
@@ -75,8 +76,11 @@ function cmp() { //U: elemento "si adivina" que tipo
 	//A: si kv tenia children, les aplicamos esta misma funcion
 
 	if (typeof(d.kv.cmp)=='string') {
-		var xcmp= get_p(Cmp,'.'+d.kv.cmp,false,/(\.)/); //A: separamos por . ej Form.Select
-		if (xcmp) { d.kv.cmp= xcmp; } //A: estaba definido en Cmp, usamos ese
+		if (d.kv.cmp[0]=='<') { d.kv.cmp= d.kv.cmp.slice(1); } //A: es html
+		else {
+			var xcmp= get_p(Cmp,'.'+d.kv.cmp,false,/(\.)/); //A: separamos por . ej Form.Select
+			if (xcmp) { d.kv.cmp= xcmp; } //A: estaba definido en Cmp, usamos ese
+		}
 	}
 	//A: si cmp era el path a uno en Cmp, pusimos el objeto
 	console.log("cmp Z",d.kv);
@@ -110,6 +114,15 @@ function CmpDef(f, proto) { //U: definir un componente de UI que se puede usar c
 		proto.apply(my,args);  //A: initialize with parent
 		f.apply(my,[my].concat(args));
 		//A: llamamos la funcion que define el componente con la instancia
+		my.renderImpl= my.render;
+		my.render= function () {
+			var x= my.renderImpl.apply(this,arguments);
+			if (typeof(x)=='object') { 
+				if (x.$$typeof) { return x; } //A: es pReact
+				else { return cmp(x); }
+			}
+			else { return h('div',{},x); };
+		}
 	}
 
 	var p= myComponentDef.prototype= new proto(); 
