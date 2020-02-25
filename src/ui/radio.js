@@ -7,12 +7,75 @@ function cmp_audio(my) { //U: un componente para reproducir audio
 	my.render= function cmp_audio_render(props) {
 		//eventos interesates onEnded: fLog("ended"), onLoadedmetadata: fLog("load")
 		//SEE: https://www.w3schools.com/tags/ref_av_dom.asp
-		return e({cmp: 'audio',controls: true, ... props}, [
-				e({cmp:'source',src: props.src , type: "audio/ogg"})
+		return cmp({cmp: '<audio',controls: true, ... props}, [
+				cmp({cmp:'source',src: props.src , type: "audio/ogg"})
 		]);
 	}
 }
 
+//============================================================
+function cmp_youtube(my) {
+	//SEE: https://developers.google.com/youtube/iframe_api_reference
+
+	var divId= 'playerYt'+Date.now();
+	var player= null;
+	var init_i= null; 
+
+	my.componentWillMount= function yt_componentWillMount() {
+		if (window.YTScript==null) {
+			YTScript= document.createElement('script');
+			YTScript.src = "https://www.youtube.com/iframe_api";
+			var firstScriptTag = document.getElementsByTagName('script')[0];
+			firstScriptTag.parentNode.insertBefore(YTScript, firstScriptTag);
+		}
+	}
+
+	function onPlayerStateChange(props, event) {
+		if (event.data===0) { console.log("YT termino"); }
+
+		if (typeof(props.onChange)=='function') {
+			props.onChange(event);
+		}
+	}
+
+	my.render= function cmp_yt_render(props) {
+		if (init_i== null) { 
+			init_i= setInterval(() => {
+				var e= document.getElementById(divId);
+				console.log('YT '+window.YT+' '+e);
+				if (window.YT==null || e==null) return ;
+				//A: tenemos todo
+				clearInterval(init_i);
+
+				player = new YT.Player(divId, {
+					height: '390', width: '640',
+					videoId: 'M7lc1UVf-VE',
+					events: {
+						onReady: e => onPlayerStateChange(props,e),
+						onStateChange: e => onPlayerStateChange(props,e),
+					}
+				});
+
+			},100);
+		}
+		return {cmp: 'div', children: [{cmp: 'div', id: divId}]};
+	}
+}
+
+function scr_yt(my) {
+	var termino= 0
+	function onChange(e) {
+		if (e.data==0) { termino=1; my.refresh(); }
+	}
+
+	my.render= function () {
+		return termino ? {cmp: 'div', txt: 'Termino!'} :
+		{
+			cmp: 'youtube', 
+			onChange: onChange,
+		}
+	}
+}
 //------------------------------------------------------------
 //S: app RADIO, api
 //------------------------------------------------------------
@@ -100,6 +163,7 @@ function scr_radio_$programa(my) { //U: escuchar la radio, un programa, radio/mi
 	}
 
 	my.render= function (props, state) { 
+		console.log("render", state);
 		audioIdx= audioIdx || 0; 
 		programa= props.matches.programa;
 		audios= RadioIdx && RadioIdx[programa] && RadioIdx[programa].audios
@@ -109,12 +173,12 @@ function scr_radio_$programa(my) { //U: escuchar la radio, un programa, radio/mi
 
 		if (indexLoaded) { //A: si ya cargamos la lista de audios
 			if (audioDone) { //A: se termino el ultimo
-				contenido= eAct(volverAEscuchar,'Volver a escuchar'); 
+				contenido= cmpAct(volverAEscuchar,'Volver a escuchar'); 
 			}
 			else { //A: quedan para escuchar
 				var titulo= "(" + audioIdx + "/" + audios.length+") "+audios[audioIdx];
 
-				contenido= eGroup([
+				contenido= cmpGroup([
 					h('h4',{},titulo),
 
 					h(Cmp.audio,{
@@ -124,24 +188,24 @@ function scr_radio_$programa(my) { //U: escuchar la radio, un programa, radio/mi
 						autoplay: wantsPlay
 					}),
 
-					eGroup([ //A: en un div para que quede en una linea saparada
-						eAct(audioOnEnded,'Próximo')
+					cmpGroup([ //A: en un div para que quede en una linea saparada
+						cmpAct(audioOnEnded,'Próximo')
 					])
 				]);
 			}
 		}
 
-		return eGroup([
+		return cmpGroup([
 			h('h1',{},'Radio PodemosAprender'),
 			h('h2',{},programa),
 			contenido,
-			eAct(fAppGoTo('/radio'),'Volver a la lista')
+			cmpAct(fAppGoTo('/radio'),'Volver a la lista')
 		]);
 	}
 }
 
 function eRadio_programa_boton(k) { //U: para la lista de programas, un boton para un programa
-	return eAct(
+	return cmpAct(
 		k,
 		fAppGoTo('/radio/'+k),
 		{
@@ -165,7 +229,7 @@ function eRadio_programa_card(k) { //U: para la lista de programas, una tarjeta 
 			h(Cmp.Card.Description,{},'Nos mandamos tremenda descripción. Somos unos genios!'),
 		),	
 		h(Cmp.Card.Content, {extra: true, style: {textAlign: 'center'}}, 
-			eAct('escuchar',{icon:'play'}, fAppGoTo('/radio/'+k))
+			cmpAct('escuchar',{icon:'play'}, fAppGoTo('/radio/'+k))
 		)
 	);
 }
@@ -185,7 +249,7 @@ function scr_radio(my) { //U: escuchar la radio, ver programas
 			eProgramas= h(Cmp.Container,{},h(Cmp.Card.Group, {centered: true}, elementos.map( eRadio_programa_card ))); //TODO: generalizar
 		}
 
-		return eGroup([
+		return cmpGroup([
 			eMenu(['imagenes/logo.png','Este es','el menu']),	
 			eProgramas
 		]);
