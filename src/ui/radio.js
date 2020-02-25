@@ -43,13 +43,13 @@ function cmp_youtube(my) {
 			init_i= setInterval(() => {
 				var e= document.getElementById(divId);
 				console.log('YT '+window.YT+' '+e);
-				if (window.YT==null || e==null) return ;
+				if (window.YT==null || window.YT.Player==null || e==null) return ;
 				//A: tenemos todo
 				clearInterval(init_i);
 
 				player = new YT.Player(divId, {
-					height: '390', width: '640',
-					videoId: 'M7lc1UVf-VE',
+					height: props.height || '390', width: props.width || '640',
+					videoId: props.video,
 					events: {
 						onReady: e => onPlayerStateChange(props,e),
 						onStateChange: e => onPlayerStateChange(props,e),
@@ -63,17 +63,19 @@ function cmp_youtube(my) {
 }
 
 function scr_yt(my) {
+	var play= 0;
 	var termino= 0
 	function onChange(e) {
+		console.log("E",e);
+		if (e.data==null) { xe= e.target; e.target.playVideo(); }
 		if (e.data==0) { termino=1; my.refresh(); }
 	}
 
 	my.render= function () {
-		return termino ? {cmp: 'div', txt: 'Termino!'} :
-		{
-			cmp: 'youtube', 
-			onChange: onChange,
-		}
+		return play ?
+			(termino ? {cmp: 'div', txt: 'Termino!'} 
+			: { cmp: 'youtube', onChange: onChange, height: 10, width: 10, video: 'EzKImzjwGyM'})
+		:{ cmp: 'Button', txt: 'Play', onClick: () => {play=1; my.refresh()}}
 	}
 }
 //------------------------------------------------------------
