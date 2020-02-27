@@ -280,6 +280,7 @@ app.use(fileUpload({
 app.use('/node_modules', express.static(__dirname + '/../../node_modules'));
 app.use('/ui/node_modules', express.static(__dirname + '/../../node_modules'));
 app.use('/ui/lib', express.static(__dirname + '/../lib'));
+app.use('/ui/app', express.static(__dirname + '/../app'));
 app.get('/ui/*',function (req,res) {
 	var fname= __dirname + '/..'+ req.path; //TODO:SEC, que no suba!
 	console.log("UI PATH "+req.path+ " -> "+fname);

@@ -70,22 +70,6 @@ function cmp_youtube(my) {
 	}
 }
 
-function scr_yt(my) {
-	var play= 0;
-	var termino= 0
-	function onChange(e) {
-		console.log("E",e);
-		if (e.data==null) { xe= e.target; e.target.playVideo(); }
-		if (e.data==0) { termino=1; my.refresh(); }
-	}
-
-	my.render= function () {
-		return play ?
-			(termino ? {cmp: 'div', txt: 'Termino!'} 
-			: { cmp: 'youtube', onChange: onChange, height: 10, width: 10, video: 'EzKImzjwGyM'})
-		:{ cmp: 'Button', txt: 'Play', onClick: () => {play=1; my.refresh()}}
-	}
-}
 //------------------------------------------------------------
 //S: app RADIO, api
 //------------------------------------------------------------
@@ -103,36 +87,63 @@ function pathATitulo(k) { //U: separa ej "20200130_acordateDeMi" en fecha y titu
   return {titulo: titulo, fecha: fecha};
 }
 
-RADIO_URL="https://www.podemosaprender.org/data_radio/";
-RadioIdx= null; //DFLT
-function radioFecth(wantsReload) {
-	if (RadioIdx && !wantsReload) { return new Promise(cb => cb(RadioIdx)) }
-	//A: si ya lo tenia, lo devolvi, sino lo busco
-	return fetch(RADIO_URL+'programas.html?x='+Date.now())
-		.then(r => r.text())
-		.then(t => { 
-			RadioIdx= {}; 
-			console.log("El texto que traje es "+t);
-			t.match(/<p>[^<]*/g) //A: array con todas las entradas desde <p>hasta<
-			.sort()
-			.forEach( f => {
-				var parts= f.split("/"); parts.shift(); //A: tiro <p>.
-				if (parts[1].match(/.ogg/)) { return } //A: no quiero los audios de entrada y salida
-				var programa= RadioIdx[parts[1]] || {titulo: parts[1], audios: [RADIO_URL+'/audio/c_in.ogg']};
-				RadioIdx[parts[1]]= programa; //A: seguro lo guarde e inicialice
-				programa.audios.push(RADIO_URL+'/'+parts.join('/'));
+RADIO_URL='http://www.podemosaprender.org/data_radio_1';
+RadioIdxMain= null; //DFTL U: el indice principal
+RadioIdxMes= null; //DFLT U: el indice para un mes=una entrada del principal
+RadioIdxMesK= null; //DFLT U: el mes que tengo cargado
+
+async function radioIdxMain(wantsReload) {
+	if (RadioIdxMain==null || wantsReload) {
+		var s= await fetch(RADIO_URL+'/index.txt?'+Date.now()).then(res => res.text());
+		RadioIdxMain= s.split('\n').filter(s=>s!=''); //TODO: error check
+	}
+	return RadioIdxMain;
+}
+async function radioIdxMes(mes, wantsReload) {
+	if (RadioIdxMes==null || RadioIdxMesK!=mes || wantsReload) {
+		var s= await fetch(RADIO_URL+'/index/'+mes+'.txt?'+Date.now()).then(res => res.text());
+		RadioIdxMes= s.split('\n').filter(s=>s!=''); //TODO: error check
+		RadioIdxMesK= mes;
+	}
+	return RadioIdxMes;
+}
+
+function radioFnameToUrl(fname) {
+	var m= fname.match(/^([0-9a-zA-Z]+)(.*)$/);
+	var pfx= m[1];
+	var r= pfx.substr(0,6)+'/'+pfx+'/'+fname;
+	return r;
+}
+
+function radioIdxDiaUrl(dia) {
+	return RADIO_URL+'/audio/'+radioFnameToUrl(dia+'.msg.json');
+}
+
+ProgramaUrl= null;
+ProgramaData= null;
+ProgramaMedia= null;
+function radioPrograma(url) {
+	if (ProgramaUrl!=url) { ProgramaUrl=url;
+		ProgramaData= null;
+		ProgramaMedia= null;
+		console.log("Radio loading Programa="+ProgramaUrl+" media="+ProgramaMedia);
+		return fetch('https://cors-anywhere.herokuapp.com/'+ProgramaUrl).then(res => res.json())
+			.then(data => { 
+				console.log("Programa data",data);
+				ProgramaData= data; 
+				ProgramaMedia= [];
+				ProgramaData.forEach(d => {
+					if (d.audio) { ProgramaMedia.push(d.audio); }
+					else if (d.video) { ProgramaMedia.push(d.video); }
+				});	
+
+				ProgramaMedia[2]='https://www.youtube.com/watch?v=EzKImzjwGyM';
+				console.log("Radio loaded Programa="+ProgramaUrl+" media="+ProgramaMedia);
 			});
-
-			//TODO:EMU
-			RadioIdx['yt']= {titulo: 'Prueba YT', audios: [RADIO_URL+'/audio/c_in.ogg']};
-			RadioIdx['yt'].audios.push('https://www.youtube.com/watch?v=EzKImzjwGyM');
-
-			Object.keys(RadioIdx).forEach(k => 
-				RadioIdx[k].audios.push(RADIO_URL+'/audio/c_out.ogg')
-			);
-
-			return RadioIdx;
-		});
+	}
+	else {
+		console.log("Radio have Programa="+ProgramaUrl+" media="+ProgramaMedia);
+	}
 }
 
 //------------------------------------------------------------
@@ -146,11 +157,10 @@ function eMenu(elements) {
 	);
 }
 
-
-function scr_radio_$programa(my) { //U: escuchar la radio, un programa, radio/miprograma
+//============================================================
+function cmp_programa(my) { //U: escuchar la radio, un programa, radio/miprograma
 	var wantsPlay= false;
-	var audios= null;
-	var audioIdx= 0;
+	var mediaIdx= 0;
 	var audioDone= false;
 	var indexLoaded= false;
 
@@ -161,64 +171,100 @@ function scr_radio_$programa(my) { //U: escuchar la radio, un programa, radio/mi
 	}
 
 	function audioOnEnded() {
-		if (audioIdx<audios.length-1) { audioIdx++; }
+		if (mediaIdx<ProgramaMedia.length-1) { mediaIdx++; }
 		else { audioDone= true; }
 		my.refresh(); //A: redibujar
 	}
 
 	function volverAEscuchar() {
 		wantsPlay= true;
-		audioIdx= 0; audioDone= false;
+		mediaIdx= 0; audioDone= false;
 		my.refresh();
 	}
-
-	my.componentWillMount= function () {
-		radioFecth()
-			.then(() => {indexLoaded= true; my.refresh() }); //A: cargue lista de programas
-	}
-
+	
 	my.render= function (props, state) { 
-		console.log("render", state);
-		audioIdx= audioIdx || 0; 
-		programa= props.matches.programa;
-		audios= RadioIdx && RadioIdx[programa] && RadioIdx[programa].audios
-		console.log("Radio programa="+programa+" audios="+audios);
+		//DBG: console.log("render", props, state);
+		var p= radioPrograma(props.url);
+		if (p) { //A: esta cargando datos
+			mediaIdx= 0; //A: reiniciar por que programa vamos
+			p.then(()=> my.refresh()); 
+		} 
 
-		var contenido= 'Cargando programa '+programa;
+		var contenido= 'Cargando programa ...'; //DFLT
+		var style= {width: '80%', maxWidth: '640px'};
+		var styleHdr= { ...style, height: '3em', marginBottom: '5px', marginLeft: 'auto', marginRight: 'auto'}
 
-		if (indexLoaded) { //A: si ya cargamos la lista de audios
+		if (ProgramaMedia) { //A: si ya cargamos la lista de media
 			if (audioDone) { //A: se termino el ultimo
-				contenido= cmpAct(volverAEscuchar,'Volver a escuchar'); 
+				contenido= cmpGroup([
+					{cmp: 'div', children: [
+						{cmp: 'Button', onClick: volverAEscuchar, content: 'Volver a escuchar', icon: 'repeat', floated: 'right', labelPosition: 'right'},
+					], style: styleHdr},
+					{cmp: 'img', 
+						src: 'https://www.podemosaprender.org/data_radio/img/portada.jpg',	
+						style,
+					},
+				]);
 			}
 			else { //A: quedan para escuchar
-				var url= audios[audioIdx];
-				var titulo= "(" + audioIdx + "/" + audios.length+") "+url;
-				var youtubeUrl= url.match(/youtu.?be/) && (url.match(/v=([^&]+)/))[1];
 
-				contenido= cmpGroup([
-					cmp({cmp: 'h4',txt: titulo}),
-					youtubeUrl
-					? cmp({cmp: 'youtube', onEnded: audioOnEnded, autoplay: wantsPlay, width: 640, height: 480, video: youtubeUrl})
-					: cmp({cmp: 'audio',
-							src: audios[audioIdx], 
+				var url= ProgramaMedia[mediaIdx];
+				var titulo= "(" + (mediaIdx+1) + "/" + ProgramaMedia.length+") "+url;
+
+				var player; //U: componente para este tipo de audio
+				var youtubeUrl= url.match(/youtu.?be/) && (url.match(/v=([^&]+)/))[1];
+				if (youtubeUrl) { //A: es youtube
+					player= cmp({cmp: 'youtube', onEnded: audioOnEnded, autoplay: wantsPlay,  video: youtubeUrl, width: '80%', style})
+				}
+				else { //A: es audio
+					var audioUrl= url;
+					if (!audioUrl.match(/^http/)) {
+						audioUrl= ProgramaUrl.match(/^https?:\/\/[^\/]+\/[^\/]+/)[0] + '/audio/' + radioFnameToUrl(audioUrl);
+					}
+
+					var style= {width: '80%', maxWidth: '640px'};
+					player= cmpGroup([
+						{	cmp: 'img', 
+							src: 'https://www.podemosaprender.org/data_radio/img/portada.jpg',	
+							style,
+						},
+						{cmp: 'br'},
+						{	cmp: 'audio',
+							src: audioUrl, 
 							onEnded: audioOnEnded, 
 							onLoadedmetadata: audioOnLoadedMetadata, 
-							autoplay: wantsPlay
-						})
-					,
-					cmpGroup([ //A: en un div para que quede en una linea saparada
-						cmpAct(audioOnEnded,'Próximo')
+							autoplay: wantsPlay,
+							style,
+						}
 					])
+				}
+				//A: tengo el player correcto
+				
+				contenido= cmpGroup([
+					{cmp: 'div', id:'titulo', children: [ 
+						{cmp: 'Button', onClick: audioOnEnded, icon: 'forward', floated: 'right'},
+						{cmp: 'div',  txt: titulo},
+					], style: styleHdr},
+					player,
 				]);
 			}
 		}
 
 		return cmpGroup([
-			h('h1',{},'Radio PodemosAprender'),
-			h('h2',{},programa),
-			contenido,
-			cmpAct(fAppGoTo('/radio'),'Volver a la lista')
+			eMenu(['imagenes/logo.png','PodemosAprender radio']),	
+			{cmp: 'Container', children: [
+				contenido,
+				h('a',{href: ProgramaUrl},ProgramaUrl),
+			],
+			textAlign: 'center',}
 		]);
+	}
+}
+
+function scr_programa(my) {
+	my.render= function scr_programa_render(props) {
+		var url= (location.hash.match(/url=([^&]+)/)||[])[1];
+		return {cmp: 'programa', url: url};
 	}
 }
 

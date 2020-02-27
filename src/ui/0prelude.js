@@ -11,7 +11,7 @@ function fLog(msg,fToCallAfter) { //U: devuelve una funcion, que al llamarla log
 function loadJs(url) { //U: cargar js desde js, OjO! seguridad y eval ...
 	return fetch(url).then(r => r.text()).then(t => {
 		var src= '(async function loadJs_wrapper() {'+ 
-			('\n'+t).replace(/\nfunction ([^ \(]+)/g,"\n$1= function $1") +
+			('\n'+t).replace(/\n(async\s+)?function ([^ \(]+)/g,"\n$2= $1 function $2") +
 		'\nreturn new Promise(r => r("'+url+'"));\n})()\n';
 		//DBG console.log(url,src);
 		var p= eval(src); //A: devuelve una promesa
@@ -55,9 +55,7 @@ function cmpOut() { //U: elemento de salida tipo div
 }
 
 function cmpGroup() { //U: array con grupo de elementos
-	var d= paramsToTypeKv.apply(null,arguments);	
-	d.kv.children= d.array || (d.txt && [d.txt]);
-	return h(d.kv.cmp || 'div', d.kv);
+	return cmp.apply(this,arguments);
 }
 
 function cmp() { //U: elemento "si adivina" que tipo
@@ -85,7 +83,7 @@ function cmp() { //U: elemento "si adivina" que tipo
 	//A: si cmp era el path a uno en Cmp, pusimos el objeto
 	console.log("cmp Z",d.kv);
 
-	return h(d.kv.cmp || d.f, d.kv.cmp ? d.kv : {children: d.kv.children});
+	return h(d.kv.cmp || d.f || 'div', d.kv.cmp ? d.kv : {children: d.kv.children});
 }
 
 function appGoTo(route) { //U: navega a una ruta
