@@ -11,6 +11,8 @@
 
 //----------------------------------------------------------
 //S: dependencias
+require('dotenv').config();
+
 var express= require('express');
 var bodyParser= require('body-parser');
 var os= require('os'); //A: para interfases
@@ -22,6 +24,10 @@ var fsExtra= require('fs-extra');
 var shell= require('shelljs');
 var open= require('open');
 var basicAuth= require('express-basic-auth');
+
+btoa= require('btoa');
+atob= require('atob');
+fetch= require('node-fetch');
 
 //----------------------------------------------------------
 //S: config
@@ -264,13 +270,13 @@ app.use(function (req, res, next) {
     res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With, content-type'); // Request headers you wish to allow
     next(); // Pass to next layer of middleware
 });
-//A: le decimos a los browsers que aceptamos requests de cualquier origen, asi una pagina bajada de x.com puede acceder a nuestra api en y.com
+//A: le decimos a los browsers que aceptamos reqs de cualquier origen, asi una pagina bajada de x.com puede acceder a nuestra api en y.com
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json()); //A: aceptamos application/json en los posts
 app.use(fileUpload({
 	abortOnLimit: true,
-	responseOnLimit: "ERROR: Size Max " + CfgUploadSzMax,
+	resOnLimit: "ERROR: Size Max " + CfgUploadSzMax,
 	limits: { fileSize: CfgUploadSzMax },
 }));
 //A: accedemos a parametros de posts y uploads, con tamaño maximo controlado
@@ -299,6 +305,14 @@ app.get('/ui/*',function (req,res) {
 app.get('/', function(req, res) { res.redirect('/ui/'); });
 //SEE: http://expressjs.com/en/starter/basic-routing.html
 
+//------------------------------------------------------------
+app.get("/choto", function (req, res) {
+	console.log("XXX1");
+	logm("DBG",1,"gh");
+	keys_file_github_p('',{ user: process.env.GHUSER, pass: process.env.GHPASS })
+		.then( r => res.json(r) );
+});
+
 
 //------------------------------------------------------------
 //S: API estandar, todos los proyectos
@@ -319,69 +333,69 @@ app.get('/api/esPodemosAprender', verificarAuth,  (req, res) => {
 var Db= require(__dirname+'/db.js');
 Db.init();
 
-app.get("/api/db/users", function (request, response) {
+app.get("/api/db/users", function (req, res) {
   var dbUsers=[];
   Db.M.User.findAll().then(function(users) { // find all entries in the users tables
     users.forEach(function(user) {
       dbUsers.push([user.firstName,user.lastName]); // adds their info to the dbUsers value
     });
-    response.send(dbUsers); // sends dbUsers back to the page
+    res.send(dbUsers); // sends dbUsers back to the page
   });
 });
 
-app.get("/api/db/cuentos", function (request, response) {
+app.get("/api/db/cuentos", function (req, res) {
   var r=[];
   Db.M.CuentoContexto.findAll().then(function(elements) { // find all entries in the users tables
-    response.send(elements); 
+    res.send(elements); 
   });
 });
 
 // creates a new entry in the users table with the submitted values
 //U: curl 'https://db-sql-tutorial.glitch.me/users?falla=el+que+lee' --data '' => mensaje de error
-app.post("/api/db/users", function (request, response) {
-  var uData= {}; "fName lName email".split(" ").forEach( k => { uData[k]= request.query[k] });
+app.post("/api/db/users", function (req, res) {
+  var uData= {}; "fName lName email".split(" ").forEach( k => { uData[k]= req.query[k] });
   var validationResult= Joi.validate(uData, UserDefJoi);
   if (validationResult.error===null) {
     Db.M.User.create({ firstName: uData.fName, lastName: uData.lName});
   }
   else {
-    response.send(validationResult.error.details);
+    res.send(validationResult.error.details);
   }
-  response.sendStatus(200);
+  res.sendStatus(200);
 });
 
-app.post("/api/db/cuentos", function (request, response) {
-  var data= {}; Object.keys(tCuentoContexto).forEach( k => { data[k]= request.body[k] });
+app.post("/api/db/cuentos", function (req, res) {
+  var data= {}; Object.keys(tCuentoContexto).forEach( k => { data[k]= req.body[k] });
   //TODO: validar! var validationResult= Joi.validate(data, UserDefJoi);
   var validationResult= {};
   if (validationResult.error==null) {
 		console.log("Creando cuento",data);
     Db.M.CuentoContexto.create(data)
-		.then( d => response.send(d) );
+		.then( d => res.send(d) );
   }
   else {
-    //TODO: response.send(validationResult.error.details);
-    response.send('ERROR');
+    //TODO: res.send(validationResult.error.details);
+    res.send('ERROR');
   }
 });
 
 
 // drops the table users if it already exists, populates new users table it with just the default users.
-app.get("/api/db/reset", function (request, response) {
+app.get("/api/db/reset", function (req, res) {
   Db.load_data();
-  response.redirect("/");
+  res.redirect("/");
 });
 
 // removes all entries from the users table
-app.get("api/db/users/clear", function (request, response) {
+app.get("api/db/users/clear", function (req, res) {
   Db.M.User.destroy({where: {}});
-  response.redirect("/");
+  res.redirect("/");
 });
 
 //============================================================
 //S: inicializar
 
-//U: listen for requests
+//U: listen for reqs
 var listener = app.listen(process.env.PORT || CfgPortDflt, function() {
 	var if2addr= net_interfaces();
 	var k;
