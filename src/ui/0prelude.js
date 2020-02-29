@@ -35,6 +35,61 @@ function paramsToTypeKv() { //U: devuelve un kv con los params separados por tip
 	return r;
 }
 
+function loadJs_withTag_p(url) {
+	var r= document.createElement('script');
+	var p= new Promise(cb => { r.onload= (e	 => cb(e,r)) });
+	r.src = url;
+	var firstScriptTag = document.getElementsByTagName('script')[0];
+	firstScriptTag.parentNode.insertBefore(r, firstScriptTag);
+	return p;
+}
+
+function loadJs_forTests_p() {
+	return Promise.all(
+		"node_modules/mocha/mocha.js node_modules/expect.js/index.js node_modules/mocha/mocha.js node_modules/happen/happen.js node_modules/prosthetic-hand/dist/prosthetic-hand.js node_modules/sinon/pkg/sinon.js".split(' ').map(loadJs_withTag_p)
+	).then(x => {
+		mocha.setup({
+      ui: 'bdd',
+      ignoreLeaks: true
+    });
+	});
+}
+
+Test= {}; //U: aca ponemos todos los tests
+TestOut_el= null; //U: el div donde se ve el resultado
+function run_tests_p() {
+	TestOut_el= document.getElementById('mocha')
+	if (! TestOut_el) {
+		TestOut_el= document.createElement('div');
+		TestOut_el.id= 'mocha';
+		document.body.prepend(TestOut_el);
+	}
+
+	TestOut_el.innerHTML= '';
+
+	function runTestsImpl() { (window.mochaPhantomJS || window.mocha).run(); }
+	return loadJs_forTests_p().then( () => {
+
+		var suites= {};
+		Object.keys(Test).sort().forEach( k => {
+			var que='g'; var txt=k; //DFLT
+			var m= k.match(/^([^:]+):\s*(.*)/);
+			if (m) { que= m[1]; txt= m[2]; }
+			suites[que]= suites[que] || {};
+			suites[que][txt]= Test[k];
+		});
+		//A: tengo todos los tests en sus suites, ordenados por jerarquia
+		Object.keys(suites).forEach(sk => { var sv =suites[sk];
+			describe(sk, function () { 
+				Object.keys(sv).forEach( txt => it(txt,sv[txt]) );
+			});
+		});
+
+		if (window._cordovaNative) { document.addEventListener('deviceready',runTestsImpl,false); }
+		else { runTestsImpl(); }
+	});
+}
+
 /************************************************************************** */
 //S: UI: pReact + Router + Semantic UI, pero mas comodo
 Routes= {}; //U: RUTAS PREACT ROUTE, path -> {cmp: componente }, las usa la pantalla principal
@@ -237,10 +292,7 @@ function cmp_youtube(my) {
 
 	my.componentWillMount= function yt_componentWillMount() {
 		if (window.YTScript==null) {
-			YTScript= document.createElement('script');
-			YTScript.src = "https://www.youtube.com/iframe_api";
-			var firstScriptTag = document.getElementsByTagName('script')[0];
-			firstScriptTag.parentNode.insertBefore(YTScript, firstScriptTag);
+			YTScript= loadJs_withTag("https://www.youtube.com/iframe_api");
 		}
 	}
 
