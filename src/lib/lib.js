@@ -1,5 +1,11 @@
 //========================================================
 //S: util
+function fLog(msg,fToCallAfter) { //U: devuelve una funcion, que al llamarla loguea mensaje y los parametros
+	return function (p1,p2,p3) { 
+		console.log(msg,p1,p1,p3); 
+		if (typeof(fToCallAfter)=='function') { fToCallAfter(p1,p2,p3); }
+	}
+}
 
 function timestamp(d) { return (new Date(d||Date.now())).toISOString(); }
 

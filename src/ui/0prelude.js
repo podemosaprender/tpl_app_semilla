@@ -4,13 +4,6 @@ GLOBAL= window; //U: para acceder a todo lo definido
 
 /************************************************************************** */
 //S: utiles
-function fLog(msg,fToCallAfter) { //U: devuelve una funcion, que al llamarla loguea mensaje y los parametros
-	return function (p1,p2,p3) { 
-		console.log(msg,p1,p1,p3); 
-		if (typeof(fToCallAfter)=='function') { fToCallAfter(p1,p2,p3); }
-	}
-}
-
 function loadJs(url) { //U: cargar js desde js, OjO! seguridad y eval ...
 	return fetch(url).then(r => r.text()).then(t => {
 		var src= '(async function loadJs_wrapper() {'+ 
@@ -33,6 +26,14 @@ function paramsToTypeKv() { //U: devuelve un kv con los params separados por tip
 	}
 	r.kv= r.kv || {};
 	return r;
+}
+
+function set_style_dom(csstxt) { //U: define estilos usando css (en especial clases)
+	var style = document.createElement('style');
+	style.type = 'text/css';
+	style.innerHTML = csstxt;
+	document.getElementsByTagName('head')[0].appendChild(style);
+	return style;
 }
 
 function loadJs_withTag_p(url) {
@@ -466,6 +467,8 @@ function JSONtoHour(JSONdate) {
 
 //========================================================
 //S: MAIN
+
+set_style_dom('.test .duration { margin-left: 2em; }');
 
 main= location.pathname.match(/[^\/]+$/)  ? location.pathname+'.js' :location.pathname+'index.js';
 console.log("MAIN",main);
