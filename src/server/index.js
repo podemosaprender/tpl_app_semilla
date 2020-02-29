@@ -11,7 +11,7 @@
 
 //----------------------------------------------------------
 //S: dependencias
-require('dotenv').config();
+require('dotenv').config(); //U: config de .env, SEE: https://www.npmjs.com/package/dotenv
 
 var express= require('express');
 var bodyParser= require('body-parser');
