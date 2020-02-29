@@ -1,5 +1,7 @@
 //INFO: punto de entrada de la parte que se ejecuta en la web
 
+document.title='PodemosAprender Radio';
+
 //------------------------------------------------------------
 //S: mover a lib
 //------------------------------------------------------------
@@ -131,13 +133,16 @@ function radioPrograma(url) {
 			.then(data => { 
 				console.log("Programa data",data);
 				ProgramaData= data; 
-				ProgramaMedia= [];
+				ProgramaMedia= ['audio/c_in.ogg'];
+
 				ProgramaData.forEach(d => {
 					if (d.audio) { ProgramaMedia.push(d.audio); }
 					else if (d.video) { ProgramaMedia.push(d.video); }
 				});	
 
-				ProgramaMedia[2]='https://www.youtube.com/watch?v=EzKImzjwGyM';
+				ProgramaMedia.splice(2,0,'https://www.youtube.com/watch?v=EzKImzjwGyM');
+
+				ProgramaMedia.push('audio/c_out.ogg');
 				console.log("Radio loaded Programa="+ProgramaUrl+" media="+ProgramaMedia);
 			});
 	}
@@ -201,7 +206,7 @@ function cmp_programa(my) { //U: escuchar la radio, un programa, radio/miprogram
 						{cmp: 'Button', onClick: volverAEscuchar, content: 'Volver a escuchar', icon: 'repeat', floated: 'right', labelPosition: 'right'},
 					], style: styleHdr},
 					{cmp: 'img', 
-						src: 'https://www.podemosaprender.org/data_radio/img/portada.jpg',	
+						src: 'img/portada.jpg',	
 						style,
 					},
 				]);
@@ -218,14 +223,14 @@ function cmp_programa(my) { //U: escuchar la radio, un programa, radio/miprogram
 				}
 				else { //A: es audio
 					var audioUrl= url;
-					if (!audioUrl.match(/^http/)) {
+					if (! (audioUrl.match(/^http/) || audioUrl.match(/^audio\//))) {
 						audioUrl= ProgramaUrl.match(/^https?:\/\/[^\/]+\/[^\/]+/)[0] + '/audio/' + radioFnameToUrl(audioUrl);
 					}
 
 					var style= {width: '80%', maxWidth: '640px'};
 					player= cmpGroup([
 						{	cmp: 'img', 
-							src: 'https://www.podemosaprender.org/data_radio/img/portada.jpg',	
+							src: 'img/portada.jpg',	
 							style,
 						},
 						{cmp: 'br'},
@@ -242,7 +247,10 @@ function cmp_programa(my) { //U: escuchar la radio, un programa, radio/miprogram
 				
 				contenido= cmpGroup([
 					{cmp: 'div', id:'titulo', children: [ 
-						{cmp: 'Button', onClick: audioOnEnded, icon: 'forward', floated: 'right'},
+						wantsPlay  	
+							? {cmp: 'Button', onClick: audioOnEnded, icon: 'forward', floated: 'right'}
+							: {cmp: 'Button', onClick: () => { wantsPlay= true; my.refresh(); }, icon: 'play', floated: 'right'}
+						,
 						{cmp: 'div',  txt: titulo},
 					], style: styleHdr},
 					player,
@@ -251,7 +259,7 @@ function cmp_programa(my) { //U: escuchar la radio, un programa, radio/miprogram
 		}
 
 		return cmpGroup([
-			eMenu(['imagenes/logo.png','PodemosAprender radio']),	
+			eMenu(['img/logo.png','PodemosAprender radio']),	
 			{cmp: 'Container', children: [
 				contenido,
 				h('a',{href: ProgramaUrl},ProgramaUrl),
@@ -285,7 +293,7 @@ function eRadio_programa_card(k) { //U: para la lista de programas, una tarjeta 
 
 	return h(Cmp.Card,{},
 		h(Cmp.Card.Content, {},
-			h(Cmp.Image, {floated:'right',size:'mini',src:'imagenes/logo.png'}),
+			h(Cmp.Image, {floated:'right',size:'mini',src:'img/logo.png'}),
 			h(Cmp.Card.Header,{},
 				datos.titulo,
 				h('p',{style: {fontSize: '50%', color: 'gray'}}, '('+datos.fecha+')'),
@@ -314,7 +322,7 @@ function scr_radio(my) { //U: escuchar la radio, ver programas
 		}
 
 		return cmpGroup([
-			eMenu(['imagenes/logo.png','Este es','el menu']),	
+			eMenu(['img/logo.png','Este es','el menu']),	
 			eProgramas
 		]);
 	}
