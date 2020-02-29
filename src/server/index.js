@@ -306,9 +306,8 @@ app.get('/', function(req, res) { res.redirect('/ui/'); });
 //SEE: http://expressjs.com/en/starter/basic-routing.html
 
 //------------------------------------------------------------
-app.get("/choto", function (req, res) {
-	console.log("XXX1");
-	logm("DBG",1,"gh");
+//S: usar github como store
+app.get("/api/gh/repos", function (req, res) {
 	keys_file_github_p('',{ user: process.env.GHUSER, pass: process.env.GHPASS })
 		.then( r => res.json(r) );
 });
