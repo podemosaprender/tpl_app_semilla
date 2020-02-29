@@ -5,7 +5,10 @@ GLOBAL= window; //U: para acceder a todo lo definido
 /************************************************************************** */
 //S: utiles
 function fLog(msg,fToCallAfter) { //U: devuelve una funcion, que al llamarla loguea mensaje y los parametros
-	return function (p1,p2) { console.log(msg,p1,p1); }
+	return function (p1,p2,p3) { 
+		console.log(msg,p1,p1,p3); 
+		if (typeof(fToCallAfter)='function') { fToCallAfter(p1,p2,p3); }
+	}
 }
 
 function loadJs(url) { //U: cargar js desde js, OjO! seguridad y eval ...
@@ -210,6 +213,97 @@ LAYOUT= { //U: para poder definir directamente CSS y cambiarlo desde cfg
 }
 
 VIDEO_ICON_URL= '/ui/imagenes/video_play.png'
+
+//------------------------------------------------------------
+//S: componentes comodos
+
+function cmp_audio(my) { //U: un componente para reproducir audio
+	my.render= function cmp_audio_render(props) {
+		//eventos interesates onEnded: fLog("ended"), onLoadedmetadata: fLog("load")
+		//SEE: https://www.w3schools.com/tags/ref_av_dom.asp
+		return cmp({... props, cmp: '<audio',controls: true,  children: [
+				{cmp:'source',src: props.src , type: "audio/ogg"}
+		]});
+	}
+}
+
+//------------------------------------------------------------
+function cmp_youtube(my) {
+	//SEE: https://developers.google.com/youtube/iframe_api_reference
+
+	var divId= 'playerYt'+Date.now();
+	var player= null;
+	var init_i= null; 
+
+	my.componentWillMount= function yt_componentWillMount() {
+		if (window.YTScript==null) {
+			YTScript= document.createElement('script');
+			YTScript.src = "https://www.youtube.com/iframe_api";
+			var firstScriptTag = document.getElementsByTagName('script')[0];
+			firstScriptTag.parentNode.insertBefore(YTScript, firstScriptTag);
+		}
+	}
+
+	function onPlayerStateChange(props, ev) {
+		if (ev.data===0) { 
+			console.log("YT termino"); 
+			if (typeof(props.onEnded)=='function') {
+				props.onEnded(ev);
+			}
+		}
+		else if (ev.data==null && props.autoplay) {
+			ev.target.playVideo();
+		}
+		else if (typeof(props.onChange)=='function') {
+			props.onChange(ev);
+		}
+	}
+
+	my.render= function cmp_yt_render(props) {
+		if (init_i== null) { 
+			init_i= setInterval(() => {
+				var e= document.getElementById(divId);
+				console.log('YT '+window.YT+' '+e);
+				if (window.YT==null || window.YT.Player==null || e==null) return ;
+				//A: tenemos todo
+				clearInterval(init_i);
+
+				player = new YT.Player(divId, {
+					height: props.height || '390', width: props.width || '640',
+					videoId: props.video,
+					playerVars: { autoplay: props.autoplay, controls: props.controls!==false },
+					events: {
+						onReady: e => onPlayerStateChange(props,e),
+						onStateChange: e => onPlayerStateChange(props,e),
+					}
+				});
+
+			},100);
+		}
+		return {cmp: 'div', children: [{cmp: 'div', id: divId}]};
+	}
+}
+
+//------------------------------------------------------------
+function cmp_PaMenu(my) {
+	my.render= function PaMenu_render(props) {
+		var elements= props.elements.map(t => {return {
+			cmp: Cmp.Menu.Item, 
+			onClick: ()=> props.onClick(t), 
+			txt: t.match(/(.png|.jpg)$/) ? h('img',{src: t}) : t,
+		}});
+
+		var menu= {
+			cmp: Cmp.Menu, 
+			stackable: true, 
+			style: {marginBottom: '15px'}, 
+			children: [ {cmp: Cmp.Container,children: elements} ],
+		};
+
+		return menu;
+	}
+}
+
 
 /************************************************************************** */
 //S: server and files cfg

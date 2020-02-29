@@ -5,72 +5,6 @@ document.title='PodemosAprender Radio';
 //------------------------------------------------------------
 //S: mover a lib
 //------------------------------------------------------------
-function cmp_audio(my) { //U: un componente para reproducir audio
-	my.render= function cmp_audio_render(props) {
-		//eventos interesates onEnded: fLog("ended"), onLoadedmetadata: fLog("load")
-		//SEE: https://www.w3schools.com/tags/ref_av_dom.asp
-		return cmp({... props, cmp: '<audio',controls: true,  children: [
-				{cmp:'source',src: props.src , type: "audio/ogg"}
-		]});
-	}
-}
-
-//============================================================
-function cmp_youtube(my) {
-	//SEE: https://developers.google.com/youtube/iframe_api_reference
-
-	var divId= 'playerYt'+Date.now();
-	var player= null;
-	var init_i= null; 
-
-	my.componentWillMount= function yt_componentWillMount() {
-		if (window.YTScript==null) {
-			YTScript= document.createElement('script');
-			YTScript.src = "https://www.youtube.com/iframe_api";
-			var firstScriptTag = document.getElementsByTagName('script')[0];
-			firstScriptTag.parentNode.insertBefore(YTScript, firstScriptTag);
-		}
-	}
-
-	function onPlayerStateChange(props, ev) {
-		if (ev.data===0) { 
-			console.log("YT termino"); 
-			if (typeof(props.onEnded)=='function') {
-				props.onEnded(ev);
-			}
-		}
-		else if (ev.data==null && props.autoplay) {
-			ev.target.playVideo();
-		}
-		else if (typeof(props.onChange)=='function') {
-			props.onChange(ev);
-		}
-	}
-
-	my.render= function cmp_yt_render(props) {
-		if (init_i== null) { 
-			init_i= setInterval(() => {
-				var e= document.getElementById(divId);
-				console.log('YT '+window.YT+' '+e);
-				if (window.YT==null || window.YT.Player==null || e==null) return ;
-				//A: tenemos todo
-				clearInterval(init_i);
-
-				player = new YT.Player(divId, {
-					height: props.height || '390', width: props.width || '640',
-					videoId: props.video,
-					playerVars: { autoplay: props.autoplay, controls: props.controls!==false },
-					events: {
-						onReady: e => onPlayerStateChange(props,e),
-						onStateChange: e => onPlayerStateChange(props,e),
-					}
-				});
-
-			},100);
-		}
-		return {cmp: 'div', children: [{cmp: 'div', id: divId}]};
-	}
-}
 
 //------------------------------------------------------------
 //S: app RADIO, api
@@ -154,14 +88,6 @@ function radioPrograma(url) {
 //------------------------------------------------------------
 //S: app RADIO, pantalla
 //------------------------------------------------------------
-function eMenu(elements) {
-	return h(Cmp.Menu,{stackable: true, style: {marginBottom: '15px'}},
-		h(Cmp.Container,{},
-			elements.map(t => h(Cmp.Menu.Item,{ onClick: ()=> console.log(t)}, t.match(/(.png|.jpg)$/) ? h('img',{src: t}) : t))
-		)
-	);
-}
-
 //============================================================
 function cmp_programa(my) { //U: escuchar la radio, un programa, radio/miprograma
 	var wantsPlay= false;
@@ -259,7 +185,7 @@ function cmp_programa(my) { //U: escuchar la radio, un programa, radio/miprogram
 		}
 
 		return cmpGroup([
-			eMenu(['img/logo.png','PodemosAprender radio']),	
+			{cmp: 'PaMenu', elements: ['img/logo.png','PodemosAprender radio']},	
 			{cmp: 'Container', children: [
 				contenido,
 				h('a',{href: ProgramaUrl},ProgramaUrl),
@@ -322,7 +248,7 @@ function scr_radio(my) { //U: escuchar la radio, ver programas
 		}
 
 		return cmpGroup([
-			eMenu(['img/logo.png','Este es','el menu']),	
+			{cmp: 'PaMenu', elements: ['img/logo.png','PodemosAprender radio']},	
 			eProgramas
 		]);
 	}
