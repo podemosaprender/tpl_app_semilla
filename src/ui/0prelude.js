@@ -7,7 +7,7 @@ GLOBAL= window; //U: para acceder a todo lo definido
 function fLog(msg,fToCallAfter) { //U: devuelve una funcion, que al llamarla loguea mensaje y los parametros
 	return function (p1,p2,p3) { 
 		console.log(msg,p1,p1,p3); 
-		if (typeof(fToCallAfter)='function') { fToCallAfter(p1,p2,p3); }
+		if (typeof(fToCallAfter)=='function') { fToCallAfter(p1,p2,p3); }
 	}
 }
 
@@ -332,6 +332,33 @@ function auth_token() { //U: genera un token unico para autenticarse con el serv
   return token;
 }
 
+function mifetch(url = '', data, options={}) { //U: post usando "fetch", mas comodo
+    var fetchOpts= {
+      method: options.method || "GET", // *GET, POST, PUT, DELETE, etc.
+      mode: "cors", // no-cors, cors, *same-origin
+      cache: "no-cache", // *default, no-cache, reload, force-cache, only-if-cached
+      credentials: "same-origin", // include, *same-origin, omit
+      headers: {
+          "Content-Type": "application/json",
+					... options.headers
+      },
+      redirect: "follow", // manual, *follow, error
+      referrer: "no-referrer", // no-referrer, *client
+  };
+
+  if (options.user) {
+   fetchOpts.headers['Authorization']= 'Basic ' + btoa(options.user + ":" + options.pass);
+  }
+
+  if (data) { 
+    fetchOpts.body= JSON.stringify(data); // body data type must match "Content-Type" header
+  }
+
+  return fetch(url, fetchOpts)
+    .then(response => response.json()); // parses JSON response into native Javascript objects 
+}
+
+
 async function FetchUrl(url, usuario, password, quiereJsonParseado, data, method){ //U: hacer una peticion GET y recibir un JSON
   let response= await fetch(url,{
 		method: method || 'GET', //U: puede ser POST
@@ -397,7 +424,8 @@ function QRGenerarData(str) { //U: devuelve la data url para usar en un tag img 
 }
 
 /************************************************************************** */
-//S
+//S:
+
 function JSONtoDATE(JSONdate) {  //U: recibe una fecha en formato json y devuelve un string con la fecha dia/mes/anio
 	let fecha = new Date(JSONdate);
 	if (isNaN(fecha)) return 'error en fecha'
@@ -412,34 +440,10 @@ function JSONtoHour(JSONdate) {
 
 /************************************************************************** */
 //S: github via api
-function mifetch(url = ``, data, options={}) { //U: post usando "fetch", mas comodo
-    var fetchOpts= {
-      method: options.method || "GET", // *GET, POST, PUT, DELETE, etc.
-      mode: "cors", // no-cors, cors, *same-origin
-      cache: "no-cache", // *default, no-cache, reload, force-cache, only-if-cached
-      credentials: "same-origin", // include, *same-origin, omit
-      headers: {
-          "Content-Type": "application/json",
-      },
-      redirect: "follow", // manual, *follow, error
-      referrer: "no-referrer", // no-referrer, *client
-  };
-
-  if (options.user) {
-   fetchOpts.headers['Authorization']= 'Basic ' + btoa(options.user + ":" + options.pass);
-  }
-
-  if (data) { 
-    fetchOpts.body= JSON.stringify(data); // body data type must match "Content-Type" header
-  }
-
-  return fetch(url, fetchOpts)
-    .then(response => response.json()); // parses JSON response into native Javascript objects 
-}
 
 //VER: api https://developer.github.com/v3/
 //VER: api github https://gist.github.com/caspyin/2288960
-function set_file_github(fdsc,txt,opts) {
+function set_file_github_p(fdsc,txt,opts) {
   if (typeof(fdsc)=="string") { fdsc= {fname: fdsc } }
   //A: fdsc es un objeto que tiene fname
   var m= fdsc.fname.match(/^([^\/]+\/[^\/]+)\/?(.*)/);
@@ -464,7 +468,7 @@ function set_file_github(fdsc,txt,opts) {
   }
 }
 
-function get_file_github(fdsc,opts) {
+function get_file_github_p(fdsc,opts) {
   if (typeof(fdsc)=="string") { fdsc= {fname: fdsc } }
   //A: fdsc es un objeto que tiene fname
   var m= fdsc.fname.match(/^([^\/]+\/[^\/]+)\/?(.*)/);
@@ -480,14 +484,40 @@ function get_file_github(fdsc,opts) {
   }
 }
 
-function keys_file_github(fname,opts) {
+function keys_file_github_p(fname,opts) {
   if (fname=='') { //A: los repos
     return mifetch("https://api.github.com/user/repos",null,opts);
   }
   else { //A: un path en un repo
-    return get_file_github(fname, opts);
+    return get_file_github_p(fname, opts);
   }
 }
+
+//SEE: https://developer.github.com/v3/repos/forks/
+function fork_github_p(src,opts) {
+	return mifetch(
+		"https://api.github.com/repos/"+src+'/forks', 
+		null,
+		Object.assign({method: 'POST'},opts)
+	);
+}
+
+//SEE: https://developer.github.com/v3/repos/pages/#enable-a-pages-site
+//U: la url viene en la respuesta en html_url
+function webEnable_github_p(src, opts) {
+	return mifetch(
+		"https://api.github.com/repos/"+src+'/pages', 
+		{source: {branch: "master"}},
+		Object.assign({
+				method: 'POST', 
+				headers: {'Accept': 'application/vnd.github.switcheroo-preview+json'},
+			},
+			opts
+		)
+	);	
+}
+
+//SEE: https://developer.github.com/v3/repos/#edit
 
 //========================================================
 //S: MAIN
