@@ -57,7 +57,7 @@ function randomStr(len) {
 // Other algorithms: 'sha1', 'md5', 'sha256', 'sha512' ...depends on availability of OpenSSL on platform
 //VER: https://gist.github.com/GuillermoPena/9233069
 function hash_s(string, algorithm = 'sha256') {
-	let shasum = crypto.createHash(algorithm);
+	var shasum = crypto.createHash(algorithm);
 	shasum.update(string)
 	var hash = shasum.digest('hex')
 	return hash;
