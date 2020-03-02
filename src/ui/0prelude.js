@@ -470,9 +470,16 @@ function JSONtoHour(JSONdate) {
 
 set_style_dom('.test .duration { margin-left: 2em; }');
 
-main= location.pathname.match(/[^\/]+$/)  ? location.pathname+'.js' :location.pathname+'index.js';
+m= location.href.match(/app=([^&#]+)/);
+if (m) { //A: habia un parametro 
+	main= m[1]+'.js';
+}
+else {
+	main= location.pathname.match(/[^\/]+$/)  ? location.pathname+'.js' : location.pathname+'index.js';
+}
+
 console.log("MAIN",main);
-loadJs(main).then( x => {
+loadJs(main+'?_'+Date.now()).then( x => {
 	console.log("AppStarted "+x);
 	AppStart();
 });
