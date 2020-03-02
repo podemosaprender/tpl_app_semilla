@@ -9,7 +9,7 @@ function fLog(msg,fToCallAfter) { //U: devuelve una funcion, que al llamarla log
 
 function timestamp(d) { return (new Date(d||Date.now())).toISOString(); }
 
-function ser_json(o) { return JSON.stringify(o); }
+function ser_json(o, wantsIndent) { return JSON.stringify(o, null, wantsIndent); }
 function ser_json_r(s) { return JSON.parse(s); }
 ser= ser_json;
 ser_r= ser_json_r;
