@@ -1,5 +1,3 @@
-for (k in PRecharts) { Cmp[k]= PRecharts[k]; }
-
 //SEE: https://www.chartjs.org/docs/latest/charts/bar.html
 data = {
   labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July'],

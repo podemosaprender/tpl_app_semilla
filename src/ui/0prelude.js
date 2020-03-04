@@ -467,8 +467,9 @@ function JSONtoHour(JSONdate) {
 
 //========================================================
 //S: MAIN
-
 set_style_dom('.test .duration { margin-left: 2em; }');
+
+for (k in PRecharts) { Cmp[k]= PRecharts[k]; }
 
 m= location.href.match(/app=([^&#]+)/);
 if (m) { //A: habia un parametro 
