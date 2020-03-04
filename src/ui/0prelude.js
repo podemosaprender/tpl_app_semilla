@@ -274,7 +274,8 @@ COLOR.azulClaro= 'rgb(105,178,226)';
 COLOR.gris= 'rgb(194,195,201)';
 
 LAYOUT= { //U: para poder definir directamente CSS y cambiarlo desde cfg
-	BG_COLOR : COLOR.gris //U: el fondo la pagina para el sitio 
+	BG_COLOR: COLOR.gris, //U: el fondo la pagina para el sitio 
+	ICONS: {}, //U: iconos con nombre
 }
 
 VIDEO_ICON_URL= '/ui/imagenes/video_play.png'
