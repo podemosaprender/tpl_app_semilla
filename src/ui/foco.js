@@ -31,17 +31,9 @@ function cmp_ContainerDesktop(my) {
 					 "children": [
 						{
 						 "cmp": "Container",
-						 "children": [
-							{
-							 "cmp": "Menu.Item",
-							 "as": "a",
-							 "children": [ "Home" ]
-							},
-							{
-							 "cmp": "Menu.Item",
-							 "children": [ "Work" ]
-							},
-						 ]
+						 "children": props.items.map( it => (
+								{ "cmp": "Menu.Item", "as": "a", "children": it }
+							))
 						}
 					 ]
 					},
@@ -77,23 +69,9 @@ function cmp_ContainerMobile(my) {
 			 "onHide": my.handleSidebarHide,
 			 "visible": sidebarOpened,
 			 "vertical": true,
-			 "children": [
-				{
-				 "as": "a",
-				 "cmp": "Menu.Item",
-				 "children": [ "Home" ]
-				},
-				{
-				 "as": "a",
-				 "cmp": "Menu.Item",
-				 "children": [ "Work" ]
-				},
-				{
-				 "as": "a",
-				 "cmp": "Menu.Item",
-				 "children": [ "Tercero" ]
-				}
-				]	
+			 "children": props.items.map( it => (
+					{ "cmp": "Menu.Item", "as": "a", "children": it }
+				))
 			},
 			{
 			 "cmp": "Sidebar.Pusher",
@@ -101,8 +79,7 @@ function cmp_ContainerMobile(my) {
 			 "children": [
 				{
 				 "cmp": "Segment",
-				 "vertical": true,
-				 "inverted": true,
+				 "vertical": true, "inverted": true,
 				 "textAlign": "center", "style": { "minHeight": "1em 0em" },
 				 "children": [
 					{
@@ -142,8 +119,8 @@ function cmp_ContainerMobile(my) {
 function cmp_ContainerResponsive(my) {
 	my.render= function(props) {
 		return {cmp: 'div', children: [
-			{cmp: 'ContainerDesktop', children: props.children},
-			{cmp: 'ContainerMobile', children: props.children},
+			{... props, cmp: 'ContainerDesktop'},
+			{... props, cmp: 'ContainerMobile'},
 		]};
 	}
 }
@@ -225,7 +202,8 @@ function cmp_chart(my) {
 
 function scr_foco(my) {
 	my.render= function () {
-		return {cmp: 'ContainerResponsive', children: [
+		return {cmp: 'ContainerResponsive', items: ['Comprar','Hacer','Planear'],
+		children: [
 			{cmp: 'Segment', children: 'Que le ponemos adentro?'},
 			{cmp: 'chart'},
 		]};
