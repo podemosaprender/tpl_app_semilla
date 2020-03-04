@@ -305,7 +305,7 @@ function xmlAttrToKv(str, keySep) {
 				var s=''; 
 				for (i++; i<tokens.length && tokens[i]!=stop; i++) { s+=tokens[i]; } 
 				//TODO: error si falta cierre 
-				r[k]= tok=='{{' ? xmlAttrToKv(s,':') : s; k= null;
+				r[k]= tok=='{{' ? xmlAttrToKv(s,':') : tok=='{' ? 'EVAL('+s+')' : s; k= null;
 				//logm("DBG",0,"xmlAttrToKv v",{i,k,stop,tok:tokens[i],s});
 			}
 		}
@@ -320,7 +320,7 @@ function xmlToPaPreact(xmlstr) {
 	var st= [{}]; //A: stack para armar el resultado, empieza con un "top"
 	var tos= null; //A: top of stack
 	tokens.forEach(tok => {
-		var m= tok.match(/<(\/?)([^ >]+)\s*([^>]*)>$/);
+		var m= tok.match(/<(\/?)([^\s\r\n\t>]+)\s*([^>]*)>$/);
 		if (m) { //A: es un tag
 			var abre= !m[1];
 			var cierra= m[1] || (m[3] && m[3].match(/\/$/));

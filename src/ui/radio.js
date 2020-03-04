@@ -185,7 +185,7 @@ function cmp_programa(my) { //U: escuchar la radio, un programa, radio/miprogram
 		}
 
 		return cmpGroup([
-			{cmp: 'PaMenu', elements: ['img/logo.png','PodemosAprender radio']},	
+			{cmp: 'PaMenu', items: ['img/logo.png','PodemosAprender radio']},	
 			{cmp: 'Container', children: [
 				contenido,
 				h('a',{href: ProgramaUrl},ProgramaUrl),
@@ -248,7 +248,7 @@ function scr_radio(my) { //U: escuchar la radio, ver programas
 		}
 
 		return cmpGroup([
-			{cmp: 'PaMenu', elements: ['img/logo.png','PodemosAprender radio']},	
+			{cmp: 'PaMenu', items: ['img/logo.png','PodemosAprender radio']},	
 			eProgramas
 		]);
 	}

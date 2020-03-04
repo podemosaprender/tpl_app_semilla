@@ -8,7 +8,7 @@ function scr_preact(my) {
 
 	function onConvertir() {
 		window.src= src;
-		nuestro_src= '//convertido\n'+ser_json( xmlToPaPreact(src), 1);	
+		nuestro_src= ser_json( xmlToPaPreact(src), 1).replace(/"EVAL\((.*?)\)"/g,function (x,exp) { return get_p(Cmp, '.'+exp, false,/(\.)/) ? "Cmp."+exp : exp.replace(/this\./g,"my.") });	
 		my.refresh();
 	}
 

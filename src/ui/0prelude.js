@@ -28,6 +28,11 @@ function paramsToTypeKv() { //U: devuelve un kv con los params separados por tip
 	return r;
 }
 
+function getWidth() {
+  const isSSR = typeof window === 'undefined';
+  return isSSR ? Responsive.onlyTablet.minWidth : window.innerWidth;
+}
+
 function set_style_dom(csstxt) { //U: define estilos usando css (en especial clases)
 	var style = document.createElement('style');
 	style.type = 'text/css';
@@ -121,12 +126,16 @@ function cmp() { //U: elemento "si adivina" que tipo
 	var d= paramsToTypeKv.apply(null,arguments);	
 	//A: separamos los params en kv, array y f
 	d.kv.children= d.kv.children || d.array;
-	console.log("cmp A",d.kv);
+	//DBG console.log("cmp A",d.kv);
+	d.kv.children= (d.kv.children && !Array.isArray(d.kv.children)) ? [d.kv.children] : d.kv.children;
 	d.kv.children= (d.kv.children && Array.isArray(d.kv.children)) ? 
 		d.kv.children.map( p => {
-			var isObjectButNotCmp= (typeof(p)=='object' && p.$$typeof!=Symbol.for("react.element"));
-			var r= isObjectButNotCmp ? cmp(p) : p; //A: si no era cmp, llamamos a esta misma
-			logm("DBG",9,"cmp children",{isObjectButNotCmp, p, r});
+			var r= p; //DFLT
+			if (typeof(p)=='object' && p!=null) {
+				var isObjectButNotCmp= p.$$typeof!=Symbol.for("react.element");
+				r= isObjectButNotCmp ? cmp(p) : p; //A: si no era cmp, llamamos a esta misma
+				//DBG logm("DBG",9,"cmp children",{isObjectButNotCmp, p, r});
+			}
 			return r;
 		})
 		: ((d.txt || d.kv.txt)!=null ? [d.txt || d.kv.txt] : null);
@@ -140,7 +149,7 @@ function cmp() { //U: elemento "si adivina" que tipo
 		}
 	}
 	//A: si cmp era el path a uno en Cmp, pusimos el objeto
-	console.log("cmp Z",d.kv);
+	//DBG console.log("cmp Z",d.kv);
 
 	return h(d.kv.cmp || d.f || 'div', d.kv.cmp ? d.kv : {children: d.kv.children});
 }
@@ -340,7 +349,7 @@ function cmp_youtube(my) {
 //------------------------------------------------------------
 function cmp_PaMenu(my) {
 	my.render= function PaMenu_render(props) {
-		var elements= props.elements.map(t => {return {
+		var items= props.items.map(t => {return {
 			cmp: Cmp.Menu.Item, 
 			onClick: ()=> props.onClick(t), 
 			txt: t.match(/(.png|.jpg)$/) ? h('img',{src: t}) : t,
@@ -350,7 +359,7 @@ function cmp_PaMenu(my) {
 			cmp: Cmp.Menu, 
 			stackable: true, 
 			style: {marginBottom: '15px'}, 
-			children: [ {cmp: Cmp.Container,children: elements} ],
+			children: [ {cmp: Cmp.Container,children: items} ],
 		};
 
 		return menu;
@@ -467,6 +476,7 @@ function JSONtoHour(JSONdate) {
 
 //========================================================
 //S: MAIN
+
 set_style_dom('.test .duration { margin-left: 2em; }');
 
 for (k in PRecharts) { Cmp[k]= PRecharts[k]; }
