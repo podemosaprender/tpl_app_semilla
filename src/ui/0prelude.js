@@ -366,6 +366,123 @@ function cmp_PaMenu(my) {
 	}
 }
 
+function cmp_ContainerDesktop(my) {
+	function hideFixedMenu() {my.setState({ fixed: false })}
+  function showFixedMenu() {my.setState({ fixed: true })}
+
+	my.render= function (props, state) {
+		var fixed= state.fixed;
+		var children= props.children;
+		return {
+		 "cmp": "Responsive",
+		 "getWidth": getWidth, "minWidth": Cmp.Responsive.onlyTablet.minWidth,
+		 "children": [
+			{
+			 "cmp": "Visibility",
+				"onBottomPassed": showFixedMenu, "onBottomPassedReverse": hideFixedMenu, 
+				"once": false, 
+				"children": [
+				{
+				 "cmp": "Segment",
+				 "vertical": true,"textAlign": "center",
+				 "inverted": true, "style": { "minHeight": "1em 0em" },
+				 "children": [
+					{
+					 "cmp": "Menu",
+					 "fixed": fixed ? 'top' : null,
+					 "inverted": !fixed,
+					 "pointing": !fixed,
+					 "secondary": !fixed,
+					 "size": "large",
+					 "children": [
+						{
+						 "cmp": "Container",
+						 "children": props.items.map( it => (
+								{ "cmp": "Menu.Item", "as": "a", "children": it.match(/(.png|.jpg)$/) ? h('img',{src: it}) : it }
+							))
+						}
+					 ]
+					},
+				 ]
+				}
+			]
+			},
+			children
+		 ]
+		};
+	}
+}
+
+function cmp_ContainerMobile(my) {
+
+	my.handleSidebarHide= function () { my.setState({ sidebarOpened: false }); }
+  my.handleToggle= function () { my.setState({ sidebarOpened: true }); }
+
+	my.render= function (props, state) {
+		var sidebarOpened= state.sidebarOpened;
+		var children= props.children;
+
+		return {
+		 "cmp": "Responsive",
+		 "as": Cmp.Sidebar.Pushable,
+		 "getWidth": getWidth,
+		 "maxWidth": Cmp.Responsive.onlyMobile.maxWidth,
+		 "children": [
+			{
+			 "cmp": "Sidebar",
+			 "as": Cmp.Menu,
+			 "animation": "push", "inverted": true,
+			 "onHide": my.handleSidebarHide,
+			 "visible": sidebarOpened,
+			 "vertical": true,
+			 "children": props.items.map( it => (
+					{ "cmp": "Menu.Item", "as": "a", "children": it.match(/(.png|.jpg)$/) ? h('img',{src: it}) : it }
+				))
+			},
+			{
+			 "cmp": "Sidebar.Pusher",
+			 "dimmed": sidebarOpened,
+			 "children": [
+				{
+				 "cmp": "Segment",
+				 "vertical": true, "inverted": true,
+				 "textAlign": "center", "style": { "minHeight": "1em 0em" },
+				 "children": [
+					{
+					 "cmp": "Container",
+					 "children": [
+						{
+						 "cmp": "Menu",
+						 "inverted": true, "pointing": true, "secondary": true, "size": "large",
+						 "children": [
+							{
+							 "onClick": my.handleToggle,
+							 "cmp": "Menu.Item",
+							 "children": [ { "name": "sidebar", "cmp": "Icon" } ]
+							},
+						 ]
+						}
+					 ]
+					},
+				 ]
+				},
+				children
+			 ]
+			}
+		 ]
+		}
+	}
+}
+
+function cmp_ContainerResponsive(my) {
+	my.render= function(props) {
+		return {cmp: 'div', children: [
+			{... props, cmp: 'ContainerDesktop'},
+			{... props, cmp: 'ContainerMobile'},
+		]};
+	}
+}
+
 
 /************************************************************************** */
 //S: server and files cfg
