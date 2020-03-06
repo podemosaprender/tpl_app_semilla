@@ -100,6 +100,30 @@ function run_tests_p() {
 //S: UI: pReact + Router + Semantic UI, pero mas comodo
 Routes= {}; //U: RUTAS PREACT ROUTE, path -> {cmp: componente }, las usa la pantalla principal
 
+function fRef(k,dst) { //U: para pasar como parametro a "ref" de pReact y guardarse la referencia
+	return function (e) { set_p(dst,k, e); }
+}
+
+function fId(x) { return x; }
+
+function asFun(x) { //U: devuelve x si es funcion, sino una funcion que busca en x
+	return (typeof(x)=='function') ? x 
+					: (x!=null && typeof(x)=='object') ? function (k) { return x[k] }
+					: (x!= null) ? function (ignored) { return x }
+					: fId;
+}
+
+function fSetValue(k,dst, xfrm) { //U: una funcion que recive e, y guarda e.target.value en la clave k de dst, llama refresh si dst tiene esa funcion
+	var xfrm= asFun(xfrm); //A: siempre lo transformamos de alguna manera, aunque sea fId
+	return function (e) { 
+		var v= typeof(e)=='object' && e.target ? e.target.value : e; //A: si es evento, value, sino el valor en si
+		var vt= xfrm(v,get_p(dst,k)); //A: llamamos xfrm con el valor nuevo y el anterior
+		set_p(dst,k, vt); 
+		if (typeof(dst.refresh)=='function') dst.refresh(); 
+	}
+}
+
+
 function cmpAct() { //U: un elemento accionable tipo boton
 	var d= paramsToTypeKv.apply(null,arguments);	
 	d.kv.children= d.array || (d.txt && [d.txt]);
@@ -178,11 +202,23 @@ function CmpDef(f, proto) { //U: definir un componente de UI que se puede usar c
 	var myComponentDef= function (...args) {
 		var my= this; 
 		proto.apply(my,args);  //A: initialize with parent
+		my.state= my.state || {}; //A: siempre hay state
+
+		my.withValue= function (k, xfrm) { 
+			if (k[0]!='{') k='{state{'+k; //A: set y get_p requieren que empiece con sep
+			return { //U: conectar un input a estado usando { ... my.withValue('/pepe') }
+				onChange: fSetValue(k,my,xfrm),
+				value: get_p(my,k),
+			}
+		};
+
+		my.forValue= function (k,cmp, xfrm) { return Object.assign({cmp: 'Form.Input', placeholder: k, ... my.withValue(k,xfrm)}, cmp); }
+ 
 		f.apply(my,[my].concat(args));
 		//A: llamamos la funcion que define el componente con la instancia
 		my.renderImpl= my.render;
-		my.render= function () {
-			var x= my.renderImpl.apply(this,arguments);
+		my.render= function (props, state) {
+			var x= my.renderImpl.apply(this,[props,state]);
 			if (typeof(x)=='object') { 
 				if (x.$$typeof) { return x; } //A: es pReact
 				else { return cmp(x); }

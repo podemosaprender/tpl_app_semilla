@@ -68,6 +68,18 @@ function cmp_headerYacciones(my) {
 	}
 }
 
+function cmp_InputMonto(my) {
+	my.render= function (props) {
+		return [ 
+			{cmp: 'Form.Input', fluid: true, placeholder:'¿Cuánto?', onChange: props.onChange, value: props.value },
+			{cmp: 'div', style: {textAlign: 'center'}, children:
+				['x',100,500,'1k','5k','10k'].map( e => (
+					{cmp: 'Button', compact: true, size: 'small', onClick: () => props.onChange(set_p({},'{target{value',e)) , children: e }
+			))},
+		];
+	}
+}
+
 function cmp_situacion(my) {
 	my.render= function (props) {
 		return {cmp: 'Segment', basic: true, style: {paddingTop: '10px', paddingBottom: 0},children: [
@@ -90,12 +102,11 @@ function cmp_situacion(my) {
 }
 
 function scr_gasto(my) {
-	my.setCuanto= (k) => { 
-		var c= parseInt( my.state.cuanto || 0 );
-		if (k=='x') { c=0; }
-		else { c+= parseInt((k+'').replace(/k/,'000'))}
-		console.log("setCuanto",k);
-		my.setState({cuanto: c});
+	function montoAnumero(v, actual) { 
+		var c= parseInt( actual || 0 );
+		if (v=='x') { c=0; }
+		else { c+= parseInt((v+'').replace(/k/,'000'))}
+		return c;	
 	}
 
 	my.setRubro= (k) => {
@@ -114,12 +125,7 @@ function scr_gasto(my) {
 				{cmp: 'headerYacciones', titulo: 'Registrar Gasto', acciones: {volver: LAYOUT.ICONS.go_back}, onClick: props.onClick },
 
 				{cmp: 'Form', error: true, children: [
-					{cmp: 'Form.Input', fluid: true, placeholder:'¿Cuánto?', onChange: ev => my.setCuanto(ev.target.value), value: state.cuanto },
-
-					{cmp: 'div', style: {textAlign: 'center'}, children:
-					['x',100,500,'1k','5k','10k'].map( e => (
-							{cmp: 'Button', compact: true, size: 'small', onClick: () => my.setCuanto(e), children: e }
-					))},
+					my.forValue('cuanto',{cmp: 'InputMonto'}, montoAnumero ),
 
 					{cmp: 'div', style: {marginTop: '10px', marginBottom: '5px', textAlign: 'center'}, children:
 
@@ -182,8 +188,13 @@ function scr_planear(my) {
 			(v,k,acc) => put(my.forValue(k, {fluid: true, placeholder: v}), acc)
 		);
 
-		var rubros= {cmp: 'div', style: {marginTop: '10px', marginBottom: '5px', textAlign: 'center'}, children: [{cmp: 'Button', compact: true, icon: LAYOUT.ICONS.todo_mal, onClick: () => my.setRubro('X') }].concat(	Object.entries(Data.gastos).map( e => (
-							{cmp: 'Button', compact: true, icon: e[1].icon, onClick: () => my.setRubro(e[0]) }
+		var rubros= {
+			cmp: 'div', 
+			style: {marginTop: '10px', marginBottom: '5px', textAlign: 'center'}, 
+			children: 
+				[{cmp: 'Button', compact: true, icon: LAYOUT.ICONS.todo_mal, onClick: () => my.setRubro('X') }]
+				.concat(	Object.entries(Data.gastos).map( e => (
+				{cmp: 'Button', compact: true, icon: e[1].icon, onClick: () => my.setRubro(e[0]) }
 		)))};
 
 		var para= [
