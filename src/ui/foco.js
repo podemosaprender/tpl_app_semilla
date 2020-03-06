@@ -173,6 +173,28 @@ function scr_planear(my) {
 		my.setState({cuanto: c});
 	}
 
+	var initialState = { isLoading: false, results: [], value: '' }
+	var source= "prueba maravilla cosa_rara pavada".split(' ').map(x => ({title: 'Esto es una '+x}));
+	function handleResultSelect(e,cmp) {
+		my.setState({value: cmp.result.title});
+	}
+
+	function handleSearchChange(e) {
+		var v= e.target.value; console.log(v);
+		my.setState({isLoading: true, value: v});
+
+		setTimeout(() => {
+      if (my.state.value.length < 1) return my.setState(initialState)
+			v= v.toLowerCase();
+      var isMatch = e => (e.title.toLowerCase().indexOf(v)>-1)
+
+      my.setState({
+        isLoading: false,
+        results: source.filter(isMatch),
+      })
+    }, 300);
+	}
+
 	my.render= function (props, state) {
 		props.onClick= props.onClick || fAppGoTo('/');
 
@@ -188,8 +210,17 @@ function scr_planear(my) {
 			(v,k,acc) => put(my.forValue(k, v.cmp ? v : {fluid: true, placeholder: v.dsc}), acc)
 		);
 
+
+		var search= { cmp: 'Search',
+				loading: state.isLoading,
+        onResultSelect: handleResultSelect,
+        onSearchChange: handleSearchChange,
+        results: state.results,
+        value: state.value,
+		};
+
 		var para= [
-			{cmp: 'Form.Input', fluid: true, placeholder:'¿Para?', onChange: ev => my.setQue(ev.target.value), value: state.que },
+						{cmp: 'Form.Input', fluid: true, placeholder:'¿Para?', onChange: ev => my.setQue(ev.target.value), value: state.que },
 			{cmp: 'List', divided: true, selection: true, children: 
 					['<agregar>','previsto uno','previsto dos','zapatos','repollo'].map(k => (
 						{cmp: 'List.Item', children: [
@@ -202,6 +233,8 @@ function scr_planear(my) {
 		return {cmp: 'Segment', basic: true, style: {paddingTop: '10px', paddingBottom: 0}, children: [
 			hdr,
 			{cmp: 'Form', error: true, children: [
+				search,
+
 				preguntas,
 				para,
 
