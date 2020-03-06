@@ -5,6 +5,8 @@ LAYOUT.ICONS.gasto_no_previsto= 'trash alternate';
 LAYOUT.ICONS.planear= 'sitemap';
 LAYOUT.ICONS.registrar_entrada= 'sign in';
 LAYOUT.ICONS.registrar_salida= 'sign out';
+LAYOUT.ICONS.go_back= 'window close outline';
+LAYOUT.ICONS.todo_mal= 'bomb';
 
 Data= { //PLAN:
 	gastos: {
@@ -68,7 +70,7 @@ function cmp_headerYacciones(my) {
 function cmp_situacion(my) {
 	my.render= function (props) {
 		return {cmp: 'Segment', basic: true, style: {paddingTop: '10px', paddingBottom: 0},children: [
-				{cmp: 'headerYacciones', acciones: AccionesX, onClick: props.onClick },
+				{cmp: 'headerYacciones', titulo: props.titulo, acciones: AccionesX, onClick: props.onClick },
 
 				props.propuestos 
 					? {cmp: 'List', divided: true, selection: true, children: 
@@ -86,9 +88,81 @@ function cmp_situacion(my) {
 	}
 }
 
+function fRef(to,k) {
+	return function (e) { to[k]= e; xe= e;}
+}
+
+function scr_gasto(my) {
+	my.setCuanto= (k) => { 
+		var c= parseInt( my.state.cuanto || 0 );
+		if (k=='x') { c=0; }
+		else { c+= parseInt((k+'').replace(/k/,'000'))}
+		console.log("setCuanto",k);
+		my.setState({cuanto: c});
+	}
+
+	my.setRubro= (k) => {
+		console.log("SetRubro",k);
+		my.setState({rubro: k});
+	}
+
+	my.setQue= (k) => { 
+		my.setState({que: k}); //TODO: filtrar la lista de items
+	}
+
+	my.render= function (props, state) {
+		props.onClick= props.onClick || fAppGoTo('/');
+
+		return {cmp: 'Segment', basic: true, style: {paddingTop: '10px', paddingBottom: 0},children: [
+				{cmp: 'headerYacciones', titulo: 'Registrar Gasto', acciones: {volver: LAYOUT.ICONS.go_back}, onClick: props.onClick },
+
+				{cmp: 'Form', error: true, children: [
+					{cmp: 'Form.Input', fluid: true, placeholder:'¿Cuánto?', onChange: ev => my.setCuanto(ev.target.value), value: state.cuanto },
+
+					{cmp: 'div', style: {textAlign: 'center'}, children:
+					['x',100,500,'1k','5k','10k'].map( e => (
+							{cmp: 'Button', compact: true, size: 'small', onClick: () => my.setCuanto(e), children: e }
+					))},
+
+					{cmp: 'div', style: {marginTop: '10px', marginBottom: '5px', textAlign: 'center'}, children:
+
+					[{cmp: 'Button', compact: true, icon: LAYOUT.ICONS.todo_mal, onClick: () => my.setRubro('X') }]
+					.concat(	Object.entries(Data.gastos).map( e => (
+							{cmp: 'Button', compact: true, icon: e[1].icon, onClick: () => my.setRubro(e[0]) }
+					)))},
+
+					{cmp: 'Form.Input', fluid: true, placeholder:'¿Qué?', onChange: ev => my.setQue(ev.target.value), value: state.que },
+
+					{cmp: 'List', divided: true, selection: true, children: 
+							['<agregar>','previsto uno','previsto dos','zapatos','repollo'].map(k => (
+								{cmp: 'List.Item', children: [
+									k + (state.rubro ? ' de '+state.rubro : ''),
+								]}
+							))	
+					},
+
+					state.tieneError 
+					?  {cmp: 'Message', 
+								error: true, 
+								header:'error tal y tal',
+								content: 'el error es que ...',
+							}
+					: null ,
+
+					{cmp: 'div', style: { textAlign: 'right', marginTop: '10px', }, children:
+						{cmp: 'Form.Button',txt: 'guardar'},
+					}
+				]},
+		]}	
+	}
+}
+
 function scr_foco(my) {
 
-	var onClick= (k => console.log("Accion",k));
+	var onClick= (k => {
+		console.log("Accion",k);
+		if (k=='registrar_salida') { appGoTo('gasto'); }
+	});
 
 	my.render= function () {
 		var rDinero= situacionIconos(LAYOUT.ICONS.dinero_libre);
