@@ -139,7 +139,7 @@ function cmpOut() { //U: elemento de salida tipo div
 	var d= paramsToTypeKv.apply(null,arguments);	
 	d.kv.children= d.array || (d.txt && [d.txt]);
 	d.kv.onClick= d.f;
-	return h(d.kv.cmp || 'div', d.kv);
+	return h(d.kv.cmp || Cmp.Fragment, d.kv);
 }
 
 function cmpGroup() { //U: array con grupo de elementos
@@ -175,7 +175,7 @@ function cmp() { //U: elemento "si adivina" que tipo
 	//A: si cmp era el path a uno en Cmp, pusimos el objeto
 	//DBG console.log("cmp Z",d.kv);
 
-	return h(d.kv.cmp || d.f || 'div', d.kv.cmp ? d.kv : {children: d.kv.children});
+	return h(d.kv.cmp || d.f || Cmp.Fragment, d.kv.cmp ? d.kv : {children: d.kv.children});
 }
 
 function appGoTo(route) { //U: navega a una ruta

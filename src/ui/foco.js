@@ -80,9 +80,24 @@ function cmp_InputMonto(my) {
 	}
 }
 
+function cmp_InputRubro(my) {
+	my.render= function (props) {
+		return {
+			cmp: 'div', 
+			style: {marginTop: '10px', marginBottom: '5px', textAlign: 'center'}, 
+			children: [
+				{cmp: 'Button', compact: true, icon: LAYOUT.ICONS.todo_mal, onClick: () => props.onChange('X') },
+				Object.entries(Data.gastos).map( e => (
+					{cmp: 'Button', compact: true, icon: e[1].icon, onClick: () => props.onChange(e[0]) }
+				)),
+			]
+		}	
+	}
+}
+
 function cmp_situacion(my) {
 	my.render= function (props) {
-		return {cmp: 'Segment', basic: true, style: {paddingTop: '10px', paddingBottom: 0},children: [
+		return { cmp: 'Segment', basic: true, style: {paddingTop: '10px', paddingBottom: 0},children: [
 				{cmp: 'headerYacciones', titulo: props.titulo, acciones: AccionesX, onClick: props.onClick },
 
 				props.propuestos 
@@ -109,11 +124,6 @@ function scr_gasto(my) {
 		return c;	
 	}
 
-	my.setRubro= (k) => {
-		console.log("SetRubro",k);
-		my.setState({rubro: k});
-	}
-
 	my.setQue= (k) => { 
 		my.setState({que: k}); //TODO: filtrar la lista de items
 	}
@@ -126,13 +136,7 @@ function scr_gasto(my) {
 
 				{cmp: 'Form', error: true, children: [
 					my.forValue('cuanto',{cmp: 'InputMonto'}, montoAnumero ),
-
-					{cmp: 'div', style: {marginTop: '10px', marginBottom: '5px', textAlign: 'center'}, children:
-
-					[{cmp: 'Button', compact: true, icon: LAYOUT.ICONS.todo_mal, onClick: () => my.setRubro('X') }]
-					.concat(	Object.entries(Data.gastos).map( e => (
-							{cmp: 'Button', compact: true, icon: e[1].icon, onClick: () => my.setRubro(e[0]) }
-					)))},
+					my.forValue('rubro', {cmp: 'InputRubro'}),
 
 					{cmp: 'Form.Input', fluid: true, placeholder:'¿Qué?', onChange: ev => my.setQue(ev.target.value), value: state.que },
 
