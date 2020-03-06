@@ -178,28 +178,15 @@ function scr_planear(my) {
 
 		var hdr= {cmp: 'headerYacciones', titulo: 'Planear', acciones: {volver: LAYOUT.ICONS.go_back}, onClick: props.onClick};
 
-		var botonesMonto= {cmp: 'div', style: {textAlign: 'center'}, children:
-			['x',100,500,'1k','5k','10k'].map( e => (
-				{cmp: 'Button', compact: true, size: 'small', onClick: () => my.setCuanto(e), children: e }
-		))};
-
 		var preguntas= fold({
-			que: '¿Qué?',
-			cuando: '¿Cuándo?',
-			horas: '¿Cuántas horas?',
-			dinero: '¿Cuánto dinero?',
+			rubro: {cmp: 'InputRubro'},
+			que: {dsc: '¿Qué?'},
+			cuando: {dsc: '¿Cuándo?'},
+			horas: {dsc: '¿Cuántas horas?'},
+			dinero: {dsc: '¿Cuánto dinero?', cmp: 'InputMonto'},
 			}, 
-			(v,k,acc) => put(my.forValue(k, {fluid: true, placeholder: v}), acc)
+			(v,k,acc) => put(my.forValue(k, v.cmp ? v : {fluid: true, placeholder: v.dsc}), acc)
 		);
-
-		var rubros= {
-			cmp: 'div', 
-			style: {marginTop: '10px', marginBottom: '5px', textAlign: 'center'}, 
-			children: 
-				[{cmp: 'Button', compact: true, icon: LAYOUT.ICONS.todo_mal, onClick: () => my.setRubro('X') }]
-				.concat(	Object.entries(Data.gastos).map( e => (
-				{cmp: 'Button', compact: true, icon: e[1].icon, onClick: () => my.setRubro(e[0]) }
-		)))};
 
 		var para= [
 			{cmp: 'Form.Input', fluid: true, placeholder:'¿Para?', onChange: ev => my.setQue(ev.target.value), value: state.que },
@@ -216,7 +203,6 @@ function scr_planear(my) {
 			hdr,
 			{cmp: 'Form', error: true, children: [
 				preguntas,
-				botonesMonto,
 				para,
 
 				state.tieneError 
