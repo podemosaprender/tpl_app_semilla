@@ -14,6 +14,20 @@ function ser_json_r(s) { return JSON.parse(s); }
 ser= ser_json;
 ser_r= ser_json_r;
 
+function fold(o,fun,acc) {
+	if (Array.isArray(o)) { o.forEach( (v,i) => { acc= fun(v,i,acc); } ) }
+	else if (typeof(o)=='object') {
+		Object.entries(o).forEach( e => {acc= fun(e[1],e[0],acc); } );
+	}
+	return acc;
+}
+
+function put(v,dst,k) { //U: comodo para poner v en dst (lo crea si no estaba), si no le pasas k hace push
+	if (dst==null) { if (k!=null && !isFinite(k)) dst={}; else dst=[]; }
+	if (k!= null)  dst[k]= v;  else  dst.push(v); 
+	return dst;
+}
+
 P_SEP_RE= /([^A-Za-z0-9_\.+\$-])/;
 function parse_p(p, sepRe) { return p.split(sepRe || P_SEP_RE).slice(1); }//A: p empieza con un separador 
 	

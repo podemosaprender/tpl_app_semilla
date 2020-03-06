@@ -8,6 +8,7 @@ LAYOUT.ICONS.registrar_salida= 'sign out';
 LAYOUT.ICONS.go_back= 'window close outline';
 LAYOUT.ICONS.todo_mal= 'bomb';
 
+
 Data= { //PLAN:
 	gastos: {
 		salud: {
@@ -88,10 +89,6 @@ function cmp_situacion(my) {
 	}
 }
 
-function fRef(to,k) {
-	return function (e) { to[k]= e; xe= e;}
-}
-
 function scr_gasto(my) {
 	my.setCuanto= (k) => { 
 		var c= parseInt( my.state.cuanto || 0 );
@@ -157,11 +154,81 @@ function scr_gasto(my) {
 	}
 }
 
+function scr_planear(my) {
+	my.setCuanto= (k) => { 
+		var c= parseInt( my.state.cuanto || 0 );
+		if (k=='x') { c=0; }
+		else { c+= parseInt((k+'').replace(/k/,'000'))}
+		console.log("setCuanto",k);
+		my.setState({cuanto: c});
+	}
+
+	my.render= function (props, state) {
+		props.onClick= props.onClick || fAppGoTo('/');
+
+		var hdr= {cmp: 'headerYacciones', titulo: 'Planear', acciones: {volver: LAYOUT.ICONS.go_back}, onClick: props.onClick};
+
+		var botonesMonto= {cmp: 'div', style: {textAlign: 'center'}, children:
+			['x',100,500,'1k','5k','10k'].map( e => (
+				{cmp: 'Button', compact: true, size: 'small', onClick: () => my.setCuanto(e), children: e }
+		))};
+
+		var preguntas= fold({
+			que: '¿Qué?',
+			cuando: '¿Cuándo?',
+			horas: '¿Cuántas horas?',
+			dinero: '¿Cuánto dinero?',
+			}, 
+			(v,k,acc) => put(my.forValue(k, {fluid: true, placeholder: v}), acc)
+		);
+
+		var rubros= {cmp: 'div', style: {marginTop: '10px', marginBottom: '5px', textAlign: 'center'}, children: [{cmp: 'Button', compact: true, icon: LAYOUT.ICONS.todo_mal, onClick: () => my.setRubro('X') }].concat(	Object.entries(Data.gastos).map( e => (
+							{cmp: 'Button', compact: true, icon: e[1].icon, onClick: () => my.setRubro(e[0]) }
+		)))};
+
+		var para= [
+			{cmp: 'Form.Input', fluid: true, placeholder:'¿Para?', onChange: ev => my.setQue(ev.target.value), value: state.que },
+			{cmp: 'List', divided: true, selection: true, children: 
+					['<agregar>','previsto uno','previsto dos','zapatos','repollo'].map(k => (
+						{cmp: 'List.Item', children: [
+							k + (state.rubro ? ' de '+state.rubro : ''),
+						]}
+					))	
+			},
+		];
+
+		return {cmp: 'Segment', basic: true, style: {paddingTop: '10px', paddingBottom: 0}, children: [
+			hdr,
+			{cmp: 'Form', error: true, children: [
+				preguntas,
+				botonesMonto,
+				para,
+
+				state.tieneError 
+				?  {cmp: 'Message', 
+							error: true, 
+							header:'error tal y tal',
+							content: 'el error es que ...',
+						}
+				: null ,
+
+				{cmp: 'div', style: { textAlign: 'right', marginTop: '10px', }, children:
+					{cmp: 'Form.Button',txt: 'guardar'},
+				}
+
+				]
+			},
+		]};	
+	}
+}
+
+
 function scr_foco(my) {
 
 	var onClick= (k => {
 		console.log("Accion",k);
 		if (k=='registrar_salida') { appGoTo('gasto'); }
+		else if (k=='planear') { appGoTo('planear'); }
 	});
 
 	my.render= function () {
