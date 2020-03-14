@@ -95,7 +95,7 @@ function scr_catzas(my) {
 					{cmp: 'Button', children: Cartas[m].dsc, onClick: refreshWith(my,cartaProxima,m) } 
 				)),
 				{cmp: 'Button', children: 'Limpiar', onClick: refreshWith(my,cartasLimpiar) },
-				CartasHistoria.map(uiCarta)
+				{cmp: 'Card.Group', centered: true, children: CartasHistoria.map(uiCarta) },
 			];
 		}
 
