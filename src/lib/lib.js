@@ -195,17 +195,17 @@ function toSequelize(v) { //U: convierte nuestra definicion a la que necesita se
 //S: github via api
 
 function mifetch(url = '', data, options={}) { //U: post usando "fetch", mas comodo
-    var fetchOpts= {
-      method: options.method || "GET", // *GET, POST, PUT, DELETE, etc.
-      mode: "cors", // no-cors, cors, *same-origin
-      cache: "no-cache", // *default, no-cache, reload, force-cache, only-if-cached
-      credentials: "same-origin", // include, *same-origin, omit
-      headers: {
-          "Content-Type": "application/json",
-					... options.headers
-      },
-      redirect: "follow", // manual, *follow, error
-      referrer: "no-referrer", // no-referrer, *client
+  var fetchOpts= {
+		method: options.method || "GET", // *GET, POST, PUT, DELETE, etc.
+		mode: "cors", // no-cors, cors, *same-origin
+		cache: "no-cache", // *default, no-cache, reload, force-cache, only-if-cached
+		credentials: "same-origin", // include, *same-origin, omit
+		headers: {
+				"Content-Type": "application/json",
+				... options.headers
+		},
+		redirect: "follow", // manual, *follow, error
+		referrer: "no-referrer", // no-referrer, *client
   };
 
   if (options.user) {
@@ -215,9 +215,14 @@ function mifetch(url = '', data, options={}) { //U: post usando "fetch", mas com
   if (data) { 
     fetchOpts.body= JSON.stringify(data); // body data type must match "Content-Type" header
   }
+ 
+	if (options.corsProxy) {
+		options.corsProxyNoWarn || console.warn("Using third party proxy to access "+url);
+		url= 'https://cors-anywhere.herokuapp.com/'+url;
+	}
 
   return fetch(url, fetchOpts)
-    .then(response => response.json()); // parses JSON response into native Javascript objects 
+    .then(response => (options.asText ? response.text() : response.json())); // parses JSON response into native Javascript objects 
 }
 
 

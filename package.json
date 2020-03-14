@@ -65,6 +65,7 @@
     "express": "^4.16.4",
     "express-basic-auth": "^1.2.0",
     "express-fileupload": "^1.1.5",
+    "faker": "^4.1.0",
     "foodoc": "0.0.9",
     "git-rev-sync": "^1.8.0",
     "happen": "~0.3.2",
