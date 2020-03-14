@@ -204,11 +204,12 @@ function CmpDef(f, proto) { //U: definir un componente de UI que se puede usar c
 		proto.apply(my,args);  //A: initialize with parent
 		my.state= my.state || {}; //A: siempre hay state
 
-		my.withValue= function (k, xfrm) { 
+		my.withValue= function (k, xfrm, dst) { 
 			if (k[0]!='{') k='{state{'+k; //A: set y get_p requieren que empiece con sep
+			dst= dst || my;
 			return { //U: conectar un input a estado usando { ... my.withValue('/pepe') }
-				onChange: fSetValue(k,my,xfrm),
-				value: get_p(my,k),
+				onChange: fSetValue(k,dst,xfrm),
+				value: get_p(dst,k),
 			}
 		};
 

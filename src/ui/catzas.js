@@ -20,6 +20,8 @@ function refreshWith(my,fun, ... args) { //U: devuelve una funcion para onClick 
 Cartas= null; //U: mazo -> [carta*]
 CartaUltima= null;
 CartasHistoria= [];
+Historia= {text: []};
+
 function cartaProxima(mazo) {
 	//Mock: CartaUltima= "Carta "+mazo+" "+timestamp();
 	var m= Cartas[mazo];
@@ -34,6 +36,7 @@ function cartaProxima(mazo) {
 
 function cartasLimpiar() {
 	CartasHistoria= [];
+	Historia= {};
 }
 
 function cartasTraer(quiereReload) {
@@ -90,40 +93,69 @@ function uiCartaYarea(carta) { //U: tarjeta y textArea
 	]};
 }
 
-function uiConsignaYarea(carta) { //U: tarjeta y textArea
-	return {cmp: 'Container', children: [
-		{cmp: 'Header', as: 'h3', children: [
-			carta.titulo,
-			{cmp: 'Header.Subheader', children: carta.descripcion },
-		]},
-		{cmp: 'TextArea', rows: 10, style: {minWidth: '100%'}}
+function uiConsignaYarea(my, idx, carta) { //U: tarjeta y textArea
+	return {cmp: 'Container', style: {marginTop: '10px'}, children: [
+		{cmp: 'Container', text: true, children:
+			{cmp: 'Header', as: 'h3', textAlign: 'left', children: [
+				carta.titulo+' '+carta.numero,
+				{cmp: 'Header.Subheader', children: carta.descripcion },
+			]},
+		},
+		{cmp: 'TextArea', rows: 10, style: {minWidth: '100%'}, ... my.withValue('text['+idx, null, Historia)}
 	]};
 }
 
 function scr_catzas(my) {
+	var necesitaUsrGit= false;
+	function guardarGit(vieneDeModal) {
+		necesitaUsrGit= !vieneDeModal;
+		console.log("guardarGit",vieneDeModal, necesitaUsrGit, my.state);
+	}
+
 	my.render= function () {
 		if (Cartas==null) { cartasTraer().then( _ => my.refresh()) }
 		else { 
 			var mazos= Object.keys(Cartas);
 			var botones= 	{cmp: 'Container', textAlign: 'center', children: [
 				mazos.map( m => (
-					{cmp: 'Button', size: 'medium', children: Cartas[m].dsc, onClick: refreshWith(my,cartaProxima,m) } 
+					{cmp: 'Button', size: 'small', children: Cartas[m].dsc, onClick: refreshWith(my,cartaProxima,m) } 
 				)),
-				{cmp: 'Button', size: 'medium', children: 'Limpiar', onClick: refreshWith(my,cartasLimpiar) },
+				{cmp: 'Button', size: 'small', children: 'Limpiar', onClick: refreshWith(my,cartasLimpiar) },
+				{cmp: 'Button', size: 'small', children: 'Guardar', onClick: refreshWith(my,guardarGit) },
 			]};
 
 			var cartasYmazos= [
-				CartasHistoria.map(uiConsignaYarea),
+				CartasHistoria.map( (carta,idx) => uiConsignaYarea(my,idx,carta) ),
 				botones,
 			];
 		}
 
+		setTimeout( () => window.scrollTo(0,document.body.scrollHeight), 100);
+
 		return [
-			{cmp: 'Header', children: 'Catzas'},
+			{cmp: 'Menu', 
+				children: {cmp: 'Container', textAlign: 'center', children: 'CatzWriter'}
+			},
+			
 			[
 				{cmp: 'Dimmer', active: Cartas==null, children: {cmp: 'Loader', children: 'Cargando cartas ...'} },
 				cartasYmazos,
 			],
+
+			!necesitaUsrGit ? null : {cmp: 'Segment', inverted: true, children:
+				{cmp: 'Form', inverted: true, size: 'tiny', children: [
+					{cmp: 'Form.Group', children: [
+						my.forValue('user',{width: 2, label: 'Github User'}),
+						my.forValue('pass',{ type: 'password', width: 2, label: 'Pass'}),
+						my.forValue('titulo',{width: 8, label: 'Título'}),
+					]},
+					{cmp: 'Container', textAlign: 'right', style: {marginTop: '10px'}, children: [
+						{cmp: 'Button', onClick: refreshWith(my,guardarGit,'cancelar'), children: 'Cancelar'},
+						{cmp: 'Button', onClick: refreshWith(my,guardarGit,'guardar'), children: 'Guardar'},
+					]},
+				]}
+			},
 		];
+
 	}
 }
