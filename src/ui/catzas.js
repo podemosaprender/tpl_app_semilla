@@ -46,7 +46,7 @@ function cartasTraer(quiereReload) {
 	}
 
 	Cartas= null; //A: limpiamos
-	return mifetch("http://www.podemosaprender.org/cartas-catz/cartas.txt",null,{asText: 1,corsProxy: 1})
+	return mifetch("http://www.podemosaprender.org/cartas-catz/cartas.txt",null,{asText: 1,corsProxy: 1, headers: {Origin: '*'}})
 	.then(txt => {
 		Cartas= {};
 		var lineas= txt.split(/\r?\n/);
@@ -69,7 +69,7 @@ function cartasTraer(quiereReload) {
 //------------------------------------------------------------
 //S: dibujar las cartas
 
-function uiCarta(carta) { //U: para la lista de programas, una tarjeta en vez de solo boton
+function uiCarta(carta) { //U: formato tarjeta
 	//SEE: https://react.semantic-ui.com/views/card/#types-groups
 	return {cmp: 'Card', children: 
 		{cmp: 'Card.Content', children: [
@@ -83,25 +83,44 @@ function uiCarta(carta) { //U: para la lista de programas, una tarjeta en vez de
 	};
 }
 
+function uiCartaYarea(carta) { //U: tarjeta y textArea
+	return {cmp: 'Grid.Row', children: [
+		{cmp: 'Grid.Column', children: uiCarta(carta)},
+		{cmp: 'Grid.Column', children: {cmp: 'TextArea', minHeight: 200}}
+	]};
+}
+
+function uiConsignaYarea(carta) { //U: tarjeta y textArea
+	return {cmp: 'container', children: [
+		[
+			{cmp: 'Header', children: carta.titulo},
+			{cmp: 'p', children: carta.descripcion },
+		],	
+		{cmp: 'Grid.Column', children: {cmp: 'TextArea', minHeight: 200}}
+	]};
+}
+
 function scr_catzas(my) {
 	my.render= function () {
-		var contenido= 'Cargando cartas'; //dflt
 		if (Cartas==null) { cartasTraer().then( _ => my.refresh()) }
 		else { 
 			var mazos= Object.keys(Cartas);
 			
-			contenido= [
+			var cartasYmazos= [
 				mazos.map( m => (
 					{cmp: 'Button', children: Cartas[m].dsc, onClick: refreshWith(my,cartaProxima,m) } 
 				)),
 				{cmp: 'Button', children: 'Limpiar', onClick: refreshWith(my,cartasLimpiar) },
-				{cmp: 'Card.Group', centered: true, children: CartasHistoria.map(uiCarta) },
+				{cmp: 'Grid', columns: 2, children: CartasHistoria.map(uiConsignaYarea)},
 			];
 		}
 
 		return [
 			{cmp: 'Header', children: 'Catzas'},
-			contenido,
+			[
+				{cmp: 'Dimmer', active: Cartas==null, children: {cmp: 'Loader', children: 'Cargando cartas ...'} },
+				cartasYmazos,
+			],
 		];
 	}
 }
