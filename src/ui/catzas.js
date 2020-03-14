@@ -1,3 +1,13 @@
+SinAcentosIn= "áéíóúüñÁÉÍÓÚÜÑ";
+SinAcentosOut= "aeiouu~AEIOUU~";
+
+function sinAcentos(s) { //U: devuelve s pero con los caracteres sin tildes, etc.
+	return s.replace(
+		new RegExp('(['+SinAcentosIn+'])','g'), 
+		(_,c) => SinAcentosOut[SinAcentosIn.indexOf(c)] 
+	);
+}
+
 function refreshWith(my,fun, ... args) { //U: devuelve una funcion para onClick y hacer refresh despues
 	return function () {
 		fun.apply(null,args);
@@ -40,16 +50,17 @@ function cartasTraer(quiereReload) {
 	.then(txt => {
 		Cartas= {};
 		var lineas= txt.split(/\r?\n/);
-		var titulos= valoresLinea( lineas[0], 'c' ); //A: titulos, sin espacios, cols vacias a c_1
+		var titulos= valoresLinea( lineas[0], 'c' ).map( sinAcentos ); //A: titulos, sin espacios, cols vacias a c_1
 		lineas.slice(1).forEach( l => {
 			var v= valoresLinea(l); //A: valores, sin espacios
 			if (v.filter(s => s!=null).length==0) return ; //A: linea vacia, no seguimos
 
 			var kv= {}; titulos.forEach( (t,idx) => { kv[t]= v[idx] } );
 			var mazo= kv.mazo || 'dflt'
-			Cartas[mazo]= Cartas[mazo] || {cartas: [], cnt: 0};
-			Cartas[mazo].cartas.push(kv); 
-			Cartas[mazo].cnt+= parseInt(kv.cantidad);
+			var mazoK= mazo.replace(/[^a-z0-9_]/g,'_');
+			Cartas[mazoK]= Cartas[mazo] || {cartas: [], cnt: 0, dsc: mazo};
+			Cartas[mazoK].cartas.push(kv); 
+			Cartas[mazoK].cnt+= parseInt(kv.cantidad);
 		});	
 		return Cartas;
 	})
@@ -57,21 +68,34 @@ function cartasTraer(quiereReload) {
 
 //------------------------------------------------------------
 //S: dibujar las cartas
+
+function uiCarta(carta) { //U: para la lista de programas, una tarjeta en vez de solo boton
+	//SEE: https://react.semantic-ui.com/views/card/#types-groups
+	return {cmp: 'Card', children: 
+		{cmp: 'Card.Content', children: [
+			{cmp: 'Image', floated:'right',size:'mini',src:'img/logo.png'},
+			{cmp: 'Card.Header', children: [
+				carta.titulo,
+				{cmp: 'p', style: {fontSize: '50%', color: 'gray'}, children: '('+carta.numero+')'},
+			]},
+			{cmp: 'Card.Description', children: carta.descripcion},
+		]},
+	};
+}
+
 function scr_catzas(my) {
 	my.render= function () {
 		var contenido= 'Cargando cartas'; //dflt
-		if (Cartas==null) { cartasTraer().then( _=> my.refresh()) }
+		if (Cartas==null) { cartasTraer().then( _ => my.refresh()) }
 		else { 
 			var mazos= Object.keys(Cartas);
 			
 			contenido= [
 				mazos.map( m => (
-					{cmp: 'Button', children: m, onClick: refreshWith(my,cartaProxima,m) } 
+					{cmp: 'Button', children: Cartas[m].dsc, onClick: refreshWith(my,cartaProxima,m) } 
 				)),
 				{cmp: 'Button', children: 'Limpiar', onClick: refreshWith(my,cartasLimpiar) },
-				CartasHistoria.map(c => (
-					{cmp: 'div', children: ['Carta ', ser(c)]}
-				))
+				CartasHistoria.map(uiCarta)
 			];
 		}
 
