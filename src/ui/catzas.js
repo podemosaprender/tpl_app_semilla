@@ -91,12 +91,12 @@ function uiCartaYarea(carta) { //U: tarjeta y textArea
 }
 
 function uiConsignaYarea(carta) { //U: tarjeta y textArea
-	return {cmp: 'container', children: [
-		[
-			{cmp: 'Header', children: carta.titulo},
-			{cmp: 'p', children: carta.descripcion },
-		],	
-		{cmp: 'Grid.Column', children: {cmp: 'TextArea', minHeight: 200}}
+	return {cmp: 'Container', children: [
+		{cmp: 'Header', as: 'h3', children: [
+			carta.titulo,
+			{cmp: 'Header.Subheader', children: carta.descripcion },
+		]},
+		{cmp: 'TextArea', rows: 10, style: {minWidth: '100%'}}
 	]};
 }
 
@@ -105,13 +105,16 @@ function scr_catzas(my) {
 		if (Cartas==null) { cartasTraer().then( _ => my.refresh()) }
 		else { 
 			var mazos= Object.keys(Cartas);
-			
-			var cartasYmazos= [
+			var botones= 	{cmp: 'Container', textAlign: 'center', children: [
 				mazos.map( m => (
-					{cmp: 'Button', children: Cartas[m].dsc, onClick: refreshWith(my,cartaProxima,m) } 
+					{cmp: 'Button', size: 'medium', children: Cartas[m].dsc, onClick: refreshWith(my,cartaProxima,m) } 
 				)),
-				{cmp: 'Button', children: 'Limpiar', onClick: refreshWith(my,cartasLimpiar) },
-				{cmp: 'Grid', columns: 2, children: CartasHistoria.map(uiConsignaYarea)},
+				{cmp: 'Button', size: 'medium', children: 'Limpiar', onClick: refreshWith(my,cartasLimpiar) },
+			]};
+
+			var cartasYmazos= [
+				CartasHistoria.map(uiConsignaYarea),
+				botones,
 			];
 		}
 
