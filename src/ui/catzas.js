@@ -58,7 +58,7 @@ function cartasTraer(quiereReload) {
 			var kv= {}; titulos.forEach( (t,idx) => { kv[t]= v[idx] } );
 			var mazo= kv.mazo || 'dflt'
 			var mazoK= mazo.replace(/[^a-z0-9_]/g,'_');
-			Cartas[mazoK]= Cartas[mazo] || {cartas: [], cnt: 0, dsc: mazo};
+			Cartas[mazoK]= Cartas[mazoK] || {cartas: [], cnt: 0, dsc: mazo};
 			Cartas[mazoK].cartas.push(kv); 
 			Cartas[mazoK].cnt+= parseInt(kv.cantidad);
 		});	
