@@ -46,6 +46,7 @@
       "/node_modules/semantic-ui-react/dist/umd/semantic-ui-react.min.js",
       "/node_modules/semantic-ui-forest-themes/**/*",
       "/node_modules/semantic-ui-calendar-react/**/*",
+			"/node_modules/preact-chartsjs-2/**/*",
       "/node_modules/@hapi/joi/*"
     ],
     "targets": [

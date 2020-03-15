@@ -645,6 +645,7 @@ else {
 }
 
 console.log("MAIN",main);
+document.title= main.replace(/\.js.*/,'');
 loadJs(main+'?_'+Date.now()).then( x => {
 	console.log("AppStarted "+x);
 	AppStart();
