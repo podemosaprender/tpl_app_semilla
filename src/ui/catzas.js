@@ -15,6 +15,38 @@ function refreshWith(my,fun, ... args) { //U: devuelve una funcion para onClick 
 	};
 }
 
+function repoFork() {
+	return (fork_github_p('podemosaprender/CatzWriterData', GhOpts).then(fLog("fork listo"))
+	.then(() => webEnable_github_p(GhOpts.user+'/CatzWriterData',GhOpts))
+	.then( res => { GhWeb= res.html_url } )
+	.then( res => { fLog("Web Publish listo "+GhWeb)(res); return res }));
+}
+
+async function repoWrite(titulo) {
+	var fname= GhOpts.user+'/CatzWriterData/'+titulo+'.txt';
+	var sha= null; //DFLT, archivo nuevo
+
+	var f1= await get_file_github_p(fname, GhOpts);
+	logm("DBG",1,"repoWrite get previous",f1);
+	if (f1.sha) { sha= f1.sha; }
+	else {
+		var fl= await keys_file_github_p(GhOpts.user+'/CatzWriterData',GhOpts);
+		logm("DBG",1,"repoWrite get keys",fl);
+		if (! Array.isArray(fl) && fl.message=='Not Found') { //A: no existe el repo
+			await repoFork();
+		}
+	}
+
+	set_p(Historia,'{state{text[0','dflt',true); //A: si no estaba, poner un dummy	
+	var data= []; for (var i=0; i<CartasHistoria.length; i++) {
+		data.push(CartasHistoria[i]);
+		data.push(Historia.state.text[i]);
+	}
+
+	return set_file_github_p({fname: fname, sha: sha}, ser_json(data,1), GhOpts).then(fLog("guarde!"))
+	//A: tengo que leer para coseguir el sha y poder escribir, si no existia no hay problema
+}
+
 //------------------------------------------------------------
 //S: api de cartas
 Cartas= null; //U: mazo -> [carta*]
@@ -107,9 +139,26 @@ function uiConsignaYarea(my, idx, carta) { //U: tarjeta y textArea
 
 function scr_catzas(my) {
 	var necesitaUsrGit= false;
-	function guardarGit(vieneDeModal) {
-		necesitaUsrGit= !vieneDeModal;
-		console.log("guardarGit",vieneDeModal, necesitaUsrGit, my.state);
+	async function guardarGit(queQuiere) {
+		console.log("guardarGit", queQuiere, necesitaUsrGit, my.state);
+		if (queQuiere==null) {
+			necesitaUsrGit= true;
+		}
+		else if (queQuiere=='guardar') {
+			GhOpts= {user: my.state.user, pass: my.state.pass};
+			var r= await repoWrite(my.state.titulo);
+			if (r.commit!=null) {
+				alert("Guardado");
+				necesitaUsrGit= false;
+			}
+			else {
+				alert("Error guardando");
+			}
+			my.refresh();
+		}
+		else if (queQuiere=='cancelar') { 
+			necesitaUsrGit= false; 
+		}
 	}
 
 	my.render= function () {

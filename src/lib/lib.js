@@ -4,6 +4,7 @@ function fLog(msg,fToCallAfter) { //U: devuelve una funcion, que al llamarla log
 	return function (p1,p2,p3) { 
 		console.log(msg,p1,p1,p3); 
 		if (typeof(fToCallAfter)=='function') { fToCallAfter(p1,p2,p3); }
+		return p1;
 	}
 }
 
