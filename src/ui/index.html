@@ -27,9 +27,22 @@
 		<meta name="format-detection" content="telephone=no">
 		<meta name="msapplication-tap-highlight" content="no">
 		<meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width">
+    <meta name="viewport" content="initial-scale=1, width=device-width, viewport-fit=cover">
 		<meta charset="utf-8">
 		<meta http-equiv="X-UA-Compatible" content="IE=edge">
-		<meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <!--
+        Customize this policy to fit your own app's needs. For more guidance, see:
+            https://github.com/apache/cordova-plugin-whitelist/blob/master/README.md#content-security-policy
+        Some notes:
+            * gap: is required only on iOS (when using UIWebView) and is needed for JS->native communication
+            * https://ssl.gstatic.com is required only on Android and is needed for TalkBack to function properly
+            * Disables use of inline scripts in order to mitigate risk of XSS vulnerabilities. To change this:
+                * Enable inline JS: add 'unsafe-inline' to default-src
+
+					OjO:SEC:permitir todo pero todo!
+        -->
+        <meta http-equiv="Content-Security-Policy" content="default-src * gap: data: blob: filesystem: about: ws: wss: 'unsafe-inline' 'unsafe-eval'; script-src * data: blob: 'unsafe-inline' 'unsafe-eval'; connect-src * data: blob: 'unsafe-inline'; img-src * data: blob: 'unsafe-inline'; frame-src * data: blob: ; style-src * data: blob: 'unsafe-inline'; font-src * data: blob: 'unsafe-inline';">
 
 		<link rel="stylesheet" href="node_modules/leaflet/dist/leaflet.css">
 		<script src="node_modules/highland/dist/highland.js"></script><script>_=highland;</script>
@@ -69,12 +82,15 @@
 
 		<link id="tema" rel="stylesheet" href="node_modules/semantic-ui-forest-themes/semantic.cyborg.min.css">
 		<script src="node_modules/qrcode-generator/qrcode.js"></script>
+		<script src="node_modules/marked/marked.min.js"></script>
+
     <script src="0prelude.js"></script>
     <script src="lib/lib.js"></script>
   </head>
   <body>
 		<!-- A: falla en browser PERO lo usamos para apk android/cordova -->
-    <script type="text/javascript" src="cdvfile://localhost/assets/www/cordova.js"></script>
+    <script type="text/javascript" src="cordova.js"></script>
+    <!--script type="text/javascript" src="cdvfile://localhost/assets/www/cordova.js"></script -->
   </body>
 </html>
 

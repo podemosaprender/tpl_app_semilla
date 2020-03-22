@@ -4,11 +4,25 @@ GLOBAL= window; //U: para acceder a todo lo definido
 
 /************************************************************************** */
 //S: utiles
-function loadJs(url) { //U: cargar js desde js, OjO! seguridad y eval ...
-	return fetch(url).then(r => r.text()).then(t => {
+function xfrmJsToGlobals(t,url) { //U: para que function sean globales
 		var src= '(async function loadJs_wrapper() {'+ 
 			('\n'+t).replace(/\n(async\s+)?function ([^ \(]+)/g,"\n$2= $1 function $2") +
 		'\nreturn new Promise(r => r("'+url+'"));\n})()\n';
+	return src;
+}
+
+function loadJs(url) { //U: cargar js desde js, OjO! seguridad y eval ...
+	console.log("loadJs",url);
+	var proto= (url.match(/^([^:]+):/)||[])[1] || (runtimeEnv=='cordova' ? 'file' : 'http');
+	//A: calculamos que protocolo usar, puede venir SIN proto!
+	
+	var loadp= (proto=='file' || proto=='cdvfile')
+		? get_file_p(url,'txt')
+		: fetch(url).then(r => r.text())
+	
+	return loadp.then(t => {
+		//DBGconsole.log("loadJs then",url,t);
+		var src= xfrmJsToGlobals(t,url);
 		//DBG console.log(url,src);
 		var p= eval(src); //A: devuelve una promesa
 		return p;
@@ -113,12 +127,23 @@ function asFun(x) { //U: devuelve x si es funcion, sino una funcion que busca en
 					: fId;
 }
 
+function asArray(x) { //U: si x es escalar no nulo devuelve como Array, si es Array tal cual
+	return (x && !Array.isArray(x)) ? [x] : x;
+}
+
 function fSetValue(k,dst, xfrm) { //U: una funcion que recive e, y guarda e.target.value en la clave k de dst, llama refresh si dst tiene esa funcion
 	var xfrm= asFun(xfrm); //A: siempre lo transformamos de alguna manera, aunque sea fId
 	return function (e) { 
-		var v= typeof(e)=='object' && e.target ? e.target.value : e; //A: si es evento, value, sino el valor en si
-		var vt= xfrm(v,get_p(dst,k)); //A: llamamos xfrm con el valor nuevo y el anterior
-		set_p(dst,k, vt); 
+		XY= e;
+		var v= typeof(e)=='object' && e.target 
+			? ('value' in e.target)
+					? e.target.value 
+					: e.target.parentElement.children[0].checked //A: el checkbox es HORRIBLE
+			: e; //A: si es evento, value, sino el valor en si
+		var v0= get_p(dst,k);
+		var v1= xfrm(v,v0); //A: llamamos xfrm con el valor nuevo y el anterior
+		logm("DBG",3,"Value Set",{k,v,v1,v0});
+		set_p(dst,k, v1); 
 		if (typeof(dst.refresh)=='function') dst.refresh(); 
 	}
 }
@@ -204,16 +229,44 @@ function CmpDef(f, proto) { //U: definir un componente de UI que se puede usar c
 		proto.apply(my,args);  //A: initialize with parent
 		my.state= my.state || {}; //A: siempre hay state
 
-		my.withValue= function (k, xfrm, dst) { 
+		my.withValue= function (k, xfrm, dst, xfrmShow, onRef) { 
 			if (k[0]!='{') k='{state{'+k; //A: set y get_p requieren que empiece con sep
 			dst= dst || my;
-			return { //U: conectar un input a estado usando { ... my.withValue('/pepe') }
+			xfrmShow= asFun(xfrmShow);
+			onRef= asFun(onRef);
+
+			var v= get_p(dst,k);
+			var vs= xfrmShow(v);
+			var r= { //U: conectar un input a estado usando { ... my.withValue('/pepe') }
 				onChange: fSetValue(k,dst,xfrm),
-				value: get_p(dst,k),
+				value: vs,
+				ref: el => { onRef(el,vs)},
+			};
+			logm("DBG",3,"Value Get",{k,v,r});	
+			return r;	
+		};
+
+		my.setValue= function (k, xfrm, dst) { 
+			if (k[0]!='{') k='{state{'+k; //A: set y get_p requieren que empiece con sep
+			xfrm= xfrm==null ? true : xfrm; //DFLT
+			dst= dst || my;
+			return { //U: conectar un input a estado usando { ... my.withValue('/pepe') }
+				onClick: fSetValue(k,dst,xfrm),
+				value: get_p(dst,k), //XXX: marcar como apretado?
 			}
 		};
 
-		my.forValue= function (k,cmp, xfrm) { return Object.assign({cmp: 'Form.Input', placeholder: k, ... my.withValue(k,xfrm)}, cmp); }
+		my.forValue= function (k,cmp,xfrm,xfrmShow,onRef) { 
+			if (cmp && cmp.cmp=='Checkbox') { //A: necesita adaptacion :P
+				var xfrm0= asFun(xfrm);
+				xfrm= (_,vp) => (!vp); //A: toggle, lo contrario de lo que estaba
+				var onRef0= asFun(onRef0);
+				onRef= (e,v) => { e && e.setState({checked: v}); }; //A: hay que sincronizarlo a mano
+			}
+			return Object.assign({cmp: 'Form.Input', placeholder: k, ... my.withValue(k,xfrm,null,xfrmShow, onRef)}, cmp); 
+		}
+
+		my.toSet= function(k,xfrm,cmp) { return Object.assign({cmp: 'Button', children: k, ... my.setValue(k,xfrm)}, cmp); }
  
 		f.apply(my,[my].concat(args));
 		//A: llamamos la funcion que define el componente con la instancia
@@ -282,17 +335,19 @@ function CmpDefAuto() { //U: para todas las definiciones tipo function cmp_MiPan
 	}
 }
 
-function AppStart(theme) { //U: inicia la app!
+function AppStart(theme, wantsRestart) { //U: inicia la app!
 	console.log("AppStart");
 	UiSetTheme(theme || 'chubby');
 	CmpDefAuto();
-	if (!Routes['/']) { //A: no hay main, tomar la ultima funcion
+	if (wantsRestart || !Routes['/']) { //A: no hay main, tomar la ultima funcion
 		var main_k=null;
 		Object.keys(Cmp).map(k => { if (k.match(/scr_/)) { main_k= k }});
 		console.log("AppStart main inferred "+main_k);
 		Routes['/']= {cmp: Cmp[main_k]};
 		//A: dejamos como main la ultima scr_ que se definion
 	}
+	var el= document.getElementById('app');
+	if (el) { document.body.removeChild(el); }
 	render(h(Cmp.Main), document.body);
 }
 
@@ -387,16 +442,17 @@ function cmp_youtube(my) {
 //------------------------------------------------------------
 function cmp_PaMenu(my) {
 	my.render= function PaMenu_render(props) {
-		var items= props.items.map(t => {return {
+		var items= props.items.map(t => {return typeof(t)=='object' ? t : {
 			cmp: Cmp.Menu.Item, 
 			onClick: ()=> props.onClick(t), 
 			txt: t.match(/(.png|.jpg)$/) ? h('img',{src: t}) : t,
+			fitted: true,
 		}});
 
 		var menu= {
+			... props,
 			cmp: Cmp.Menu, 
-			stackable: true, 
-			style: {marginBottom: '15px'}, 
+			style: {marginBottom: '15px', ... props.style}, 
 			children: [ {cmp: Cmp.Container,children: items} ],
 		};
 
@@ -524,7 +580,7 @@ function cmp_ContainerResponsive(my) {
 
 /************************************************************************** */
 //S: server and files cfg
-Server_url= location.href.match(/(https?:\/\/[^\/]+)/)[0]; //A: tomar protocolo, servidor y puerto de donde esta esta pagina
+Server_url= (location.href.match(/(https?:\/\/[^\/]+)/)||[])[0]; //A: tomar protocolo, servidor y puerto de donde esta esta pagina
 Api_url= Server_url+'/api'; //U: la base de la URL donde atiende el servidor
 
 var Auth_usr= ''; //U: que ingreso en el form login, se pueden usar ej. para acceder a server
@@ -636,17 +692,39 @@ set_style_dom('.test .duration { margin-left: 2em; }');
 
 for (k in PRecharts) { Cmp[k]= PRecharts[k]; }
 
+runtimeEnv= (typeof window != 'undefined') ? (window.location && window.location.href.indexOf('android_asset')>-1) ? 'cordova' : 'browser' : 'node'; //XXX:asegurarse que en node nunca existe 'window'
+
 m= location.href.match(/app=([^&#]+)/);
-if (m) { //A: habia un parametro 
-	main= m[1]+'.js';
-}
+if (runtimeEnv=='cordova') { main='file:///android_asset/www/cordova_main.js'; }
+else if (m) { main= m[1]+'.js'+'?_'+Date.now(); } //A: habia un parametro 
 else {
 	main= location.pathname.match(/[^\/]+$/)  ? location.pathname+'.js' : location.pathname+'index.js';
+	main+='?_'+Date.now();
 }
 
 console.log("MAIN",main);
 document.title= main.replace(/\.js.*/,'');
-loadJs(main+'?_'+Date.now()).then( x => {
+
+function _init() {
+	platform_init(); //A: necesita funciones de cordova
+	loadJs(main).then( x => {
 	console.log("AppStarted "+x);
 	AppStart();
-});
+	});
+}
+
+function onDocumentReady(fn) { //U: see if DOM is already available
+	if (document.readyState === "complete" || document.readyState === "interactive") { 
+		//U: ya cargo, call on next available tick
+		setTimeout(fn, 1);
+	} else {
+		document.addEventListener("DOMContentLoaded", fn);
+	}
+}    
+
+if (runtimeEnv=='cordova') {
+	document.addEventListener("deviceready", _init, false);
+}
+else {
+	onDocumentReady(_init);	
+}
