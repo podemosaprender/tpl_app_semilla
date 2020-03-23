@@ -382,3 +382,9 @@ function xmlToPaPreact(xmlstr) {
 	return tos.children[0];
 }
 
+//============================================================
+//S: links a redes
+function link_whatsapp(data) {
+	//U: "https://api.whatsapp.com/send?phone=573105010573&text=*_Destacado_*%0A*texto"
+	return 'https://api.whatsapp.com/send?phone='+data.dst+'&text='+encodeURIComponent(data.body);
+}
