@@ -32,7 +32,7 @@ function genKey(passphrase, salt, keySize=128, iterationCount= 1000) {
 
   var key = CryptoJS.PBKDF2(
       CryptoJS.enc.Utf8.parse(passphrase), 
-      CryptoJS.enc.Hex.parse(salt),
+      CryptoJS.enc.Base64.parse(salt),
       { keySize: keySize, iterations: iterationCount });
 
 	key_last_= key;
@@ -133,9 +133,11 @@ function encrypt(plainText, passphrase_or_key, salt) {
 	@return {string} el texto desencriptado
 */
 function encrypt_r(cipherText, passphrase) {
-	var salt= cipherText.substr(0,4);
-	var iv= cipherText.substr(4,16);
-	var t= cipherText.substr(20);
+	var parts= cipherText.match(/^(..)(.*?)=([^=].*)$/);
+	var salt= parts[1];
+	var iv= parts[2];
+	var t= parts[3];
 	return encrypt_r_impl(t, passphrase, salt, iv, true);
 }
 
+console.log("CRYPTO");

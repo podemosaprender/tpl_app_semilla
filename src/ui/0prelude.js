@@ -4,14 +4,6 @@ GLOBAL= window; //U: para acceder a todo lo definido
 
 /************************************************************************** */
 //S: utiles
-function xfrmJsToGlobals(t,url) { //U: para que function sean globales
-	var src= '(async function loadJs_wrapper() {\n'+ 
-			('\n'+t).replace(/\n(async\s+)?function ([^ \(]+)/g,"\n$2= $1 function $2") +
-		'\nreturn new Promise(r => r("'+url+'"));\n})()\n'+
-		'//# sourceURL='+url+'\n';
-	return src;
-}
-
 function loadJs(url) { //U: cargar js desde js, OjO! seguridad y eval ...
 	console.log("loadJs",url);
 	var proto= (url.match(/^([^:]+):/)||[])[1] || (runtimeEnv=='cordova' ? 'file' : 'http');

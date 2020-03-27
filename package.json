@@ -22,7 +22,7 @@
     "build": "%APPDATA%/npm/pkg --out-path x_out/exe -t node10-macos,node10-win . ",
     "pack": "pack.sh",
     "uglify": "echo IMPLEMENTAR",
-    "build-web": "node node_modules/browserify/bin/cmd.js -r '@hapi/joi' -o node_modules/@hapi/joi/joi.js -s Joi; node_modules/uglify-es/bin/uglifyjs node_modules/@hapi/joi/joi.js -o node_modules/@hapi/joi/joi.min.js --timings --verbose -c; node node_modules/browserify/bin/cmd.js -v  -r 'preact-chartjs-2' -g aliasify -s PRecharts -o node_modules/preact-chartsjs-2/chartsjs2.min.js"
+    "build-web": "node node_modules/browserify/bin/cmd.js -r '@hapi/joi' -o node_modules/@hapi/joi/joi.js -s Joi; node_modules/uglify-es/bin/uglifyjs node_modules/@hapi/joi/joi.js -o node_modules/@hapi/joi/joi.min.js --timings --verbose -c; node node_modules/browserify/bin/cmd.js -v  -r 'preact-chartjs-2' -g aliasify -s PRecharts -o node_modules/preact-chartsjs-2/chartsjs2.min.js; node node_modules/browserify/bin/cmd.js -v  -r 'semantic-ui-calendar-react' -g aliasify -s SemanticUiCalendarReact -o node_modules/semantic-ui-calendar-react/dist/browser.js; "
   },
   "bin": "src/server/index.js",
   "pkg": {

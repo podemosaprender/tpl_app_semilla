@@ -1,8 +1,5 @@
-function scr_mainvacio(my) {
+function scr_hola(my) {
 	my.render= function () {
-		return eGroup([
-			h('h1',{},'Podemos Aprender'),	
-			h('img',{src:'imagenes/logo.png'}),
-		]);
-	};
+		return h('h3',{},'Hola PodemosAprender');
+	}
 }

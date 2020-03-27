@@ -1,3 +1,12 @@
+function xfrmJsToGlobals(t,url) { //U: para que function sean globales
+	var src= '(async function loadJs_wrapper() {\n'+ 
+			('\n'+t).replace(/\n(async\s+)?function ([^ \(]+)/g,"\n$2= $1 function $2") +
+		'\nreturn new Promise(r => r("'+url+'"));\n})()\n'+
+		'//# sourceURL='+url+'\n';
+	return src;
+}
+
+
 //========================================================
 //S: util
 function fLog(msg,fToCallAfter) { //U: devuelve una funcion, que al llamarla loguea mensaje y los parametros

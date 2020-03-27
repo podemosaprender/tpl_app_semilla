@@ -10,7 +10,7 @@
 
 os= {};
 
-runtimeEnv= (typeof window != 'undefined') ? window._cordovanative ? 'cordova' : 'browser' : 'node'; //XXX:asegurarse que en node nunca existe 'window'
+runtimeEnv= (typeof window != 'undefined') ? (window.location && window.location.href.indexOf('android_asset')>-1) ? 'cordova' : 'browser' : 'node'; //XXX:asegurarse que en node nunca existe 'window'
 
 localStorageRequestQuota_p= null;
 
@@ -107,7 +107,10 @@ var CfgStorageQuota= 500*1024*1024; //U: cuanto espacio queremos para caches/off
 
 //****************************************************************************
 //S: compatibilidad con movil
-if (runtimeEnv=='node') { 
+
+function platform_init() {
+
+	if (runtimeEnv=='node') { 
 	console.log('//A: en node! funciones compatibles');
 	os.fetch= require('cross-fetch'); //A: con require, asi rollup no las incluye
 	var fs= require('fs');
@@ -116,8 +119,8 @@ if (runtimeEnv=='node') {
 			fs.readFile(path, (err, data) => { (err!=null) ? onErr(err) : onOk(data) });
 		});
 	}
-}
-else { //A: estoy en algun browser, sea cordova, sea chrome
+	}
+	else { //A: estoy en algun browser, sea cordova, sea chrome
 	os.fetch= function (...args) { return window.fetch.apply(window,args); }
 
 	if(!window.requestFileSystem) {	window.requestFileSystem  = window.requestFileSystem || window.webkitRequestFileSystem;}
@@ -203,11 +206,9 @@ else { //A: estoy en algun browser, sea cordova, sea chrome
 		else { onGotFileEntry(path); }
 	}
 
-	get_file_slice_p= toPromise_aOkErr(get_file_slice_a);
 
 	function get_file_a(path,fmt,cbok,cbfail) { get_file_slice_a(path,fmt,-1,-1,cbok,cbfail); }
 
-	get_file_p= function (path, fmt) { return (toPromise_aOkErr(get_file_a)(path, fmt||"txt")) };
 
 	function getMeta_file_a(path,cbok,cbfail) {
 		cbfail=cbfail ||u.onFail;
@@ -227,26 +228,26 @@ else { //A: estoy en algun browser, sea cordova, sea chrome
 		else { onGotFileEntry(path); }
 	}
 
-	get_meta_p= toPromise_aOkErr(getMeta_file_a);
 
-	function keys_file_a(dirPath,cb) {
-		var conDirectorio= function(dir) {try{ logm("DBG",9,"keys_file_a conDirectorio",[dirPath,dir]); 
+		function keys_file_a(path,cb) {
+			var conDirectorio= function(dir) {try{ logm("DBG",9,"keys_file_a conDirectorio",[path,dir]); 
 			var directoryReader = dir.createReader();
 			directoryReader.readEntries(cb,cb);
-		} catch (ex) { logmex("ERR",7,"keys_file_a conDirectorio",dirPath,ex); }}
+			} catch (ex) { logmex("ERR",7,"keys_file_a conDirectorio",path,ex); }}
 
-		var conFilesystem= function (fs) {try{ logm("DBG",9,"keys_file_a gotfs",[dirPath,fs.root]); 
-			fs.root.getDirectory(dirPath,{create: false, exclusive: false},conDirectorio,cb);
-		} catch (ex) { logmex("ERR",7,"keys_file_a gotfs",dirPath,ex); cb();}}
+			var conFilesystem= function (fs) {try{ logm("DBG",9,"keys_file_a gotfs",[path,fs.root]); 
+				fs.root.getDirectory(path,{create: false, exclusive: false},conDirectorio,cb);
+			} catch (ex) { logmex("ERR",7,"keys_file_a gotfs",path,ex); cb();}}
 
+			if (typeof(path)=="string") {
+				if (runtimeEnv=='cordova' && path.indexOf("file://")==0) { //A: puede ser otro filesystem 
+					window.resolveLocalFileSystemURI(path, conDirectorio, cb);
+				}
+				else {
 		window.requestFileSystem(LocalFileSystem.PERSISTENT, 0, conFilesystem, cb);
 	}
-
-	keys_file_p= function (path) { return new Promise( (onOk, onErr) => 
-		keys_file_a(path, (res) => {
-			if (Array.isArray(res)) { onOk(res) }
-			else { onErr(res) }
-		}));
+			}
+			else { conDirectorio(path); }
 	}
 
 	function set_file_a(path,data,cbok,cbfail) { //XXX:MANEJO_ERRORES
@@ -274,7 +275,6 @@ else { //A: estoy en algun browser, sea cordova, sea chrome
 		} catch (ex) { logm("ERR",7,"set_file_a write",[path,ex.message]); cbfail(ex); }}
 	}
 
-	set_file_p= toPromise_aOkErr(set_file_a);
 
 	set_file_bin_a= set_file_a;
 
@@ -297,7 +297,6 @@ else { //A: estoy en algun browser, sea cordova, sea chrome
 		}
 	}
 
-	ensure_dir_p= toPromise_aOkErr(ensure_dir_a);
 
 	function deleteAll_dir(dirPath,quiereSinPedirConfirmacion,cb,cbFail) {
 		cb= cb || u.nullf;
@@ -325,7 +324,6 @@ else { //A: estoy en algun browser, sea cordova, sea chrome
 		window.requestFileSystem(LocalFileSystem.PERSISTENT, 0, gotFs, cbFail);
 	}
 
-	deleteAll_dir_p= toPromise_aOkErr(deleteAll_dir)
 
 	function delete_file_a(path,cbok,cbfail) {
 	 logm('DBG',9, 'Borrando archivo', {path});
@@ -343,7 +341,6 @@ else { //A: estoy en algun browser, sea cordova, sea chrome
 		} catch (ex) { logm("ERR",7,"delete_file_a gotentry",[path,ex.message]); }}
 	}
 
-	delete_file_p= toPromise_aOkErr(delete_file_a);
 
 	}
 	else { //A: no tenemos filesystem, emulamos con localstorage
@@ -405,27 +402,42 @@ else { //A: estoy en algun browser, sea cordova, sea chrome
 		};
 	}
 	//XXX:GALILEO fijate si los toPromise_a1 los podes hacer todos aca una sola vez
-}
-//A: deje definida alguna version de las mismas funciones, este en node, browser sin filesystme o cordova
+	}
+	//A: deje definida alguna version de las mismas funciones, este en node, browser sin filesystme o cordova
+	ensure_dir_p= toPromise_aOkErr(ensure_dir_a);
+	get_meta_p= toPromise_aOkErr(getMeta_file_a);
+	keys_file_p= function (path) { return new Promise( (onOk, onErr) => 
+		keys_file_a(path, (res) => {
+			if (Array.isArray(res)) { onOk(res) }
+			else { onErr(res) }
+		}));
+	}
+	get_file_slice_p= toPromise_aOkErr(get_file_slice_a);
+	get_file_p= function (path, fmt) { return (toPromise_aOkErr(get_file_a)(path, fmt||"txt")) };
+	set_file_p= toPromise_aOkErr(set_file_a);
+	delete_file_p= toPromise_aOkErr(delete_file_a);
+	deleteAll_dir_p= toPromise_aOkErr(deleteAll_dir)
 
-/**
+	/**
 	Guardar un objeto en un archivo
 	@param path {path} donde guardar
 	@param data {serializable} los datos (se tiene que poder serializar con JSON.stringify)
 	@return {promise}
-*/
-function set_file_o_p(path, data) {
+	*/
+	function set_file_o_p(path, data) {
 	return set_file_p(path, ser.ser_planoOjson(data));
-}
+	}
 
-/**
+	/**
 	Leer un objeto de un archivo
 	@param path {path} donde guardar
 	@param data {serializable} los datos (se tiene que poder serializar con JSON.stringify)
 	@return {promise}
-*/
-function get_file_o_p(path, data) {
+	*/
+	function get_file_o_p(path, data) {
 	return get_file_p(path, "txt").then(t => ser.ser_planoOjson_r(t));
+	}
+
 }
 
 //***********************************************************
@@ -493,4 +505,5 @@ function rtInfo() {try {
 function appExit() {
 	if (navigator.app && navigator.app.exitApp) { navigator.app.exitApp();	} 
 	else { window.location.reload(); }		 
-};
+}
+
