@@ -86,20 +86,45 @@ function mirequest_p(url,data,opts) {
 FileSty= { width: '0.1px', height: '0.1px', opacity: '0', overflow: 'hidden', position: 'absolute', zIndex: '-1', };
 
 function scr_semillaApk(my) {
+	var apkUrlChk= '';
+	var apkUrlChkProc= null;
+	var apkData= null;
+
 	my.render= function () {
 		console.log(XSTATE=my.state);
 		act= my.state.act || '';
-		apkUrl= SEMILLA_APK_URL + '/xapk/'+ my.state.usr + '/' + my.state.app + '.apk';
-		var data;
+
 		var errors= [];
-		if (act!='') {
-			data= {
+		var data= {
 				pipe: "FormParams",
-			};
-			['app','usr'].forEach(k => {
-				data[k]= (my.state[k]||'').trim();
-				if (!data[k]) { errors.push(k+' no puede ser vacío'); }
-			});
+		};
+		['app','usr'].forEach(k => {
+			data[k]= (my.state[k]||'').trim();
+			if (act!='' && !data[k]) { errors.push(k+' no puede ser vacío'); }
+		});
+
+		apkUrl= SEMILLA_APK_URL + '/xapk/'+ my.state.usr + '/' + my.state.app + '.apk';
+		if (apkUrl!=apkUrlChk) {
+			apkData= null; //A: la que teniamos ya no vale
+ 			if (!apkUrlChkProc) { 
+				apkUrlChkProc= setTimeout(() => {
+					apkUrlChkProc= null;
+					apkUrlChk= apkUrl;
+					var data= {
+						pipe: "FormParams",
+						cmd: "hasApk",
+						app: my.state.app,
+						usr: my.state.usr,
+					};
+					mirequest_p(SEMILLA_APK_URL+'/app/cx',data)
+					.then(x => {
+						var res= x.target.responseText;
+						console.log("apkUrlCheck",res);
+						apkData= ser_json_r(res);
+						my.refresh();
+					});
+				},1000);
+			}
 		}
 
 		if (act=='1up' && errors.length==0) {
@@ -127,11 +152,11 @@ function scr_semillaApk(my) {
 			.catch( () => my.setState({'act':'2to_build'}) )
 		}
 
-		console.log("XXX",act,act[0]>'1');
+		console.log("XXX",apkData);
 		var btn= [
 			my.toSet('act','1up',{cmp: 'Step', children: 'Subir fuentes', completed: act[0]>'1'}),
 			my.toSet('act','2build',{cmp: 'Step', children: 'Construir apk', completed: act[0]>'2', disabled: !(act[0]>='2')}),
-			my.toSet('act','3dld',{cmp: 'Step', children: 'Descargar apk', href: apkUrl, disabled: !(act[0]>='3')}),
+			my.toSet('act','3dld',{cmp: 'Step', children: 'Descargar apk', href: apkData && SEMILLA_APK_URL+'/'+apkData.path, disabled: !(act[0]>='3')}),
 		];
 
 		return [
@@ -143,6 +168,8 @@ function scr_semillaApk(my) {
 					my.forValue('app',{label: 'App', error: !(act=='' || my.state.usr>'')}),
 					my.forValue('data',{cmp:'InputFile', accept: '.zip', content: 'Fuentes www', error: !(act=='' || my.state.data!=null)}),
 					errors.length ? {cmp: 'Message', negative: true, children: errors.map(e=> ({cmp:'p',children: e}))} : null,
+					(apkData && apkData.fh) ? {cmp: 'Message', children: ['Existe un ',{cmp: 'a', children: 'apk previo', href: SEMILLA_APK_URL+'/'+apkData.path, target: '_blank'}, ' del ', new Date(apkData.fh)+'']} : null,
+
 					{cmp: 'Container', textAlign: 'right', style: {marginTop: '10px'}, 
 					 children: {cmp: 'Step.Group', ordered: true, children: btn}}
 				]},
