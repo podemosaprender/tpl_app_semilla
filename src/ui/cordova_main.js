@@ -1,9 +1,3 @@
-document.body.style.background='#e0f2e9';
-C_ROJIZO='#ad5d4e';
-C_AZUL='#40476d';
-//--826754--eb6534
-C_TOOLBAR= C_AZUL;
-
 CfgSrc= localStorage.CfgAppSrc;
 CfgUrl= localStorage.CfgAppUrl;
 CfgUseProxy= localStorage.CfgAppUrlUseProxy==null || localStorage.CfgAppUrlUseProxy=="true" ;

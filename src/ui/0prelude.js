@@ -129,7 +129,9 @@ function fSetValue(k,dst, xfrm) { //U: una funcion que recive e, y guarda e.targ
 	return function (e) { 
 		XY= e;
 		var v= typeof(e)=='object' && e.target 
-			? ('value' in e.target)
+			? (e.target.type=='file')
+			? e.target.files 
+			: ('value' in e.target)
 					? e.target.value 
 					: e.target.parentElement.children[0].checked //A: el checkbox es HORRIBLE
 			: e; //A: si es evento, value, sino el valor en si
@@ -359,6 +361,11 @@ COLOR= { } //U: para definir colores por nombre o funcion, ej. "FONDO" y poder c
 COLOR.azulOscuro= 'rgb(56,87,162)';
 COLOR.azulClaro= 'rgb(105,178,226)';
 COLOR.gris= 'rgb(194,195,201)';
+C_ROJIZO='#ad5d4e';
+C_AZUL='#40476d';
+//--826754--eb6534
+C_TOOLBAR= C_AZUL;
+
 
 LAYOUT= { //U: para poder definir directamente CSS y cambiarlo desde cfg
 	BG_COLOR: COLOR.gris, //U: el fondo la pagina para el sitio 
