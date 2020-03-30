@@ -14,6 +14,11 @@
 var key_last_;
 var key_salt_and_pass_last_;
 
+function hash_s(str) {
+	//SEE: https://cryptojs.gitbook.io/docs/#encoder
+	return CryptoJS.SHA256(str).toString(CryptoJS.enc.Base64)
+}
+
 /**
 	Genera una clave más segura que el algoritmo por defecto de CryptoJs apartir de una passphrase
 	@link https://stackoverflow.com/questions/35472396/how-does-cryptojs-get-an-iv-when-none-is-specified
