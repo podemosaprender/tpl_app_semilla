@@ -48,6 +48,15 @@ function set_style_dom(csstxt) { //U: define estilos usando css (en especial cla
 	return style;
 }
 
+function set_persistent(k,v) { //U: guarda en algun lado persistente v que puede ser un objeto
+	localStorage[k]= ser_json(v);
+}
+
+function get_persistent(k,dflt) { //U: lee lo que se guardo con set_persistent
+	var s= localStorage[k];
+	return (s!=null && ser_json_r(s)) || dflt;
+}
+
 function loadJs_withTag_p(url) {
 	var r= document.createElement('script');
 	var p= new Promise(cb => { r.onload= (e	 => cb(e,r)) });
@@ -388,6 +397,38 @@ function cmp_audio(my) { //U: un componente para reproducir audio
 }
 
 //------------------------------------------------------------
+function read_inputFile(file, fmt, cb) { //U: lee un archivo del valor de un elemento input file
+	reader = new FileReader();
+	reader.onload= function (revt) {
+		cb(revt.target.result);
+	};
+	if (fmt=='bin') { reader.readAsBinaryString(file); }
+	else { reader.readAsText(file); }
+};
+
+function cmp_InputFile(my) { //U: un input file invisible, para controlar con otros componentes
+	function onChange(e, props) {
+		 my.setState({file: e.target.files ? e.target.files[0].name : ''});
+		 props.onChange(e,my);
+	}
+
+	my.click= function () { my.fileInputRef.click(); };
+	my.open= my.click;
+
+	my.render= function(props) {
+		if (props.cref) { setTimeout(() => (props.cref(my)) , 10); }
+		return {
+					cmp:'input',
+					accept: props.accept,
+    			ref: r => (my.fileInputRef=r),
+    			type:'file',
+    			hidden: true,
+					onChange: e => onChange(e,props),
+ 		}; 
+	}
+}
+
+//------------------------------------------------------------
 function cmp_youtube(my) {
 	//SEE: https://developers.google.com/youtube/iframe_api_reference
 
@@ -695,7 +736,7 @@ function cmp_Markdown(my) {
 		var html= marked(txt).replace(/href="#CALL:([^"]*)"/, 'onclick="$1"');
 		delete(props.children);
 		delete(props.cmp);
-		return {cmp: 'Segment', dangerouslySetInnerHTML: { __html: html }, ... props}	
+		return {cmp: props.cmp || 'Segment', dangerouslySetInnerHTML: { __html: html }, ... props}	
 	}	
 }
 

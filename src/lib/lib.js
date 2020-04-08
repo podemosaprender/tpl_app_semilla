@@ -23,6 +23,29 @@ function ser_json(o, wantsIndent) { return JSON.stringify(o, null, wantsIndent);
 function ser_json_r(s) { return JSON.parse(s); }
 ser= ser_json;
 ser_r= ser_json_r;
+//de lib.js
+ser_planoOproto= function (ox,serFun,wantsPretty) { //U: para NO encodear strings, usa el primer caracter para distinguir
+	var o= toJs(ox)
+	return ((typeof(o)=="string") ? ("\t"+o) : (" "+serFun(o,wantsPretty)));
+}
+
+ser_planoOproto_r= function (s,serFun_r) {
+	return (s && s.length>0) ? 
+		s.charAt(0)=="\t" ? s.substr(1) : serFun_r(s.substr(1)) :
+		null;
+}
+
+ser_planoOjson= function (o, wantsPretty) { return ser_planoOproto(o,ser_json,wantsPretty); }
+ser_planoOjson_r= function (s) { return ser_planoOproto_r(s,ser_json_r); }
+
+escape_html= function (str) { //U: encodea todos los carateres peligrosos en html para que no se rompa lo que se ve
+  return str!=null ? (str+"").replace(/[^A-Za-z0-9-_]/g,function (chr) { return "&#"+chr.charCodeAt(0)+";" }) : "";
+}
+
+escape_uri= function (str) { //U: encodea todos los carateres peligrosos en uri component para que no se rompa
+  return str!=null ? (str+"").replace(/[^A-Za-z0-9-_]/g,function (chr) { return "%"+chr.charCodeAt(0).toString(16) }) : "";
+}
+
 
 function fold(o,fun,acc) {
 	if (Array.isArray(o)) { o.forEach( (v,i) => { acc= fun(v,i,acc); } ) }
@@ -213,7 +236,7 @@ function toSequelize(v) { //U: convierte nuestra definicion a la que necesita se
 }
 
 /************************************************************************** */
-//S: github via api
+//S: fetch y request comodos
 
 function mifetch(url = '', data, options={}) { //U: post usando "fetch", mas comodo
 	if (options.corsProxy) {
@@ -248,6 +271,31 @@ function mifetch(url = '', data, options={}) { //U: post usando "fetch", mas com
     .then(response => (options.asText ? response.text() : response.json())); // parses JSON response into native Javascript objects 
 }
 
+//------------------------------------------------------------
+function mihttprequest(url,data,opts) {
+	var logk= 'request '+(opts.k||'')+' '+url;
+
+	var formData= new FormData();
+	Object.keys(data).forEach(k => formData.append(k, data[k]));
+
+	var request= new XMLHttpRequest();
+	setTimeout(() => {
+	request.onprogress= opts.onprogress || (e => console.log(logk+" progress",e));
+	request.onload= opts.onload || (e => console.log(logk+ "load",e));
+	request.onabort= opts.onabort || opts.onerror || (e => console.log(logk+" abort",e));
+	request.onerror= opts.onerror || (e => console.log(logk+" abort",e));
+	request.open(opts.method || "POST", url);
+	request.send(formData);
+	},100); //A: actualizar ui
+	return request;
+}
+
+function mihttprequest_p(url,data,opts) {
+	return new Promise( (onOk, onErr) => mihttprequest(url, data, {...opts, onload: onOk, onerror: onErr}));
+}
+
+/************************************************************************** */
+//S: fetch y request comodos
 
 //VER: api https://developer.github.com/v3/
 //VER: api github https://gist.github.com/caspyin/2288960

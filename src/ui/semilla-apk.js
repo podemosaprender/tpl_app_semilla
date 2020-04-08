@@ -1,180 +1,195 @@
-SEMILLA_APK_URL='https://semilla-apk.herokuapp.com';
-SEMILLA_APK_URL='http://localhost:8090';
+//INFO: generar un apk subiendo un zip con js, html y css a nuestro servidor
 
 //------------------------------------------------------------
-function readInputFile(file, fmt, cb) { //U: lee un archivo de un input file
-	reader = new FileReader();
-	reader.onload= function (revt) {
-		cb(revt.target.result);
-	};
-	if (fmt=='bin') { reader.readAsBinaryString(file); }
-	else { reader.readAsText(file); }
-};
+//S: conversacion con el servidor, independiente de la UI, se puede probar de la consola
 
-var IdCnt= 0;
-function BtnFiles({children, ...props}) { //U:boton para subir archivos
-	var id= 'filein'+(IdCnt++);
+SEMILLA_APK_URL='https://semilla-apk.herokuapp.com'; //U: url del servidor
+//SEMILLA_APK_URL='http://localhost:8090'; //U: url pruebas locales
 
-	function onData(e) {
-		console.log('BtnFiles',id,e);
-		props.onData(e.target.files, readInputFile);
-	}
+//U: el servidor acepta solo dos requests: 
 
-	return h('div',{style:'display: inline-block;'},
-		h('input',{onChange: onData, type:'file', id: id, name: id, accept: props.accept||'*', 'class':'inputfile'}),
-		h('label',{style:'width: auto;', 'for': id, 'class': BotonArribaClass}, children),
-	);
+//1: subis un .zip con tus fuentes, te contesta un "path" que va a tener tu .apk para bajarlo
+// curl -F 'data=@/tmp/app.zip' -F 'pipe=FormParams' -F 'cmd=fromZip' "$HOST/app/cx/fromZip" | tee x.out ; X=`cat x.out`; X=${X##*path\":\"}; X=${X%%\"*} #subir zip con fuentes
+
+//2: podes preguntar si ya esta listo, en la respuesta la clave apk te dice que si, la clave src cuanto te falta
+// curl "$HOST/app/cx/stsFor?pipe=FormParams&cmd=stsFor&path=$X"
+
+APKSRV_STATUS_POLL_DT= 2*1000; //U: cada cuanto consultar al servidor si ya esta listo (ms)
+
+apkData= null; //U: ultima respuesta del servidor
+apkSrcFile= null; //U: me lo guardo para debug/probar desde la consola
+function apksrvRestorePersistent() { //U: si hubo un reload, ver lo ultimo que subimos
+	apkData= get_persistent("apksrv_data");
 }
 
-function cmp_InputFile(my) {
-	function onChange(e, props) {
-		 my.setState({file: e.target.files ? e.target.files[0].name : ''});
-		 props.onChange(e);
-	}
-
-	my.render= function(props) {
-		return [
-				{ cmp: 'Form.Input',
-					fluid: true,
-					value: my.state.file,
-					action: {
-						//content: props.content || "Choose File",
-						labelPosition:"right",
-						icon: "file",
-						onClick: () => my.fileInputRef.click(),
-					}, 
-					actionPosition: 'right',
-					placeholder: props.content,
-					label: props.content,
-					error: props.error,
-				},
-				{
-					cmp:'input',
-					accept: props.accept,
-    			ref: r => (my.fileInputRef=r),
-    			type:'file',
-    			hidden: true,
-					onChange: e => onChange(e,props),
- 				},
-		]; 
-	}
-}
-
-//------------------------------------------------------------
-function mirequest(url,data,opts) {
-	var logk= 'request '+(opts.k||'')+' '+url;
-
-	var formData= new FormData();
-	Object.keys(data).forEach(k => formData.append(k, data[k]));
-
-	var request= new XMLHttpRequest();
-	setTimeout(() => {
-	request.onprogress= opts.onprogress || (e => console.log(logk+" progress",e));
-	request.onload= opts.onload || (e => console.log(logk+ "load",e));
-	request.onabort= opts.onabort || (e => console.log(logk+" abort",e));
-	request.open(opts.method || "POST", url);
-	request.send(formData);
-	},100); //A: actualizar ui
-	return request;
-}
-
-function mirequest_p(url,data,opts) {
-	return new Promise( (onOk, onErr) => mirequest(url, data, {...opts, onload: onOk, onabort: onErr}));
-}
-
-//------------------------------------------------------------
-FileSty= { width: '0.1px', height: '0.1px', opacity: '0', overflow: 'hidden', position: 'absolute', zIndex: '-1', };
-
-function scr_semillaApk(my) {
-	var apkUrlChk= '';
-	var apkUrlChkProc= null;
-	var apkData= null;
-
-	my.render= function () {
-		console.log(XSTATE=my.state);
-		act= my.state.act || '';
-
-		var errors= [];
-		var data= {
-				pipe: "FormParams",
-		};
-		['app','usr'].forEach(k => {
-			data[k]= (my.state[k]||'').trim();
-			if (act!='' && !data[k]) { errors.push(k+' no puede ser vacío'); }
-		});
-
-		apkUrl= SEMILLA_APK_URL + '/xapk/'+ my.state.usr + '/' + my.state.app + '.apk';
-		if (apkUrl!=apkUrlChk) {
-			apkData= null; //A: la que teniamos ya no vale
- 			if (!apkUrlChkProc) { 
-				apkUrlChkProc= setTimeout(() => {
-					apkUrlChkProc= null;
-					apkUrlChk= apkUrl;
-					var data= {
-						pipe: "FormParams",
-						cmd: "hasApk",
-						app: my.state.app,
-						usr: my.state.usr,
-					};
-					mirequest_p(SEMILLA_APK_URL+'/app/cx',data)
-					.then(x => {
-						var res= x.target.responseText;
-						console.log("apkUrlCheck",res);
-						apkData= ser_json_r(res);
-						my.refresh();
-					});
-				},1000);
+function apksrvCallAndUpdate(data,wantsPersistent,cb) { //U: actualiza el estado segun evento de mihttprequest
+	data.pipe= "FormParams";
+	mihttprequest_p(SEMILLA_APK_URL+'/app/cx/', data)
+		.then( r => { 
+			//DBG console.log("XUP",r); 
+			var res= ser_planoOjson_r(r.target.responseText); 
+			if (res.src || res.apk) { 
+				apkData= Object.assign(apkData,res); 
+				wantsPersistent && set_persistent("apksrv_data",apkData);
 			}
+			console.log("apksrv res",apkData);
+			cb(apkData,res)
+		})
+		.catch( x => { 
+			//DBG console.error("XUP",x); 
+			cb(null, x) 
+		})
+}
+
+function apksrv1uploadZip(fileData, wantsPersistent, cb) { //U: paso1: subir el zip (en fileData)
+	apkData= null; //A: los datos viejos ya no valen
+	apkSrcFile= fileData; //A: me lo guardo para probar de consola
+	var data= {};
+	data.data= fileData;
+	data.cmd= "fromZip";
+	apkData= {srcName: apkSrcFile.name, upload_t: Date.now()}; //A: guardamos por si hace reload
+	wantsPersistent && set_persistent("apksrv_data",apkData);
+	apksrvCallAndUpdate(data, wantsPersistent, cb);
+}
+
+function apksrv2statusQuery(cb, wantsPersistent) { //U: consulta el estado UNA vez
+	console.log("apksrv2statusQuery",apkData);
+	if (!apkData || !(apkData.src || apkData.apk)  ) { cb(null,'NO_DATA'); return } //A: nada para consultar, termino o no hay datos
+
+	var data= {
+		cmd: "stsFor",
+		path: apkData.src.path,
+	};
+	apksrvCallAndUpdate(data,wantsPersistent,cb);
+}
+
+//S: checkear periodicamente si ya esta listo el .apk para bajar
+ApkSrvStatusPollCtl_= null; //U: para detener el interval
+function apksrvStatusPollStop() {
+	clearInterval(ApkSrvStatusPollCtl_);
+	ApkSrvStatusPollCtl_= null;
+}
+
+function apksrvStatusPollStart(cb, wantsPersistent, wantsAfterApk, forceRestart) { //A: para empezar a consultar periodicamente el servidor
+	if (ApkSrvStatusPollCtl_ && !forceRestart) { return } //A: ya estaba
+	apksrvStatusPollStop(); //A: si ya habia uno, lo detenemos
+	ApkSrvStatusPollCtl_= setInterval(()=> {
+		if (!wantsAfterApk && get_p(apkData,"{apk")) { apksrvStatusPollStop(); }	
+		else { apksrv2statusQuery(cb, wantsPersistent); }
+	}, APKSRV_STATUS_POLL_DT);
+}
+
+//------------------------------------------------------------
+function instrucciones_ui() {
+	return {cmp: 'Markdown', children: `
+Podés crear una aplicación android con sólo subir un archivo .zip 
+
+1. Editá en una carpeta de tu computadora los archivos javascript, html, css, imágenes, etc. que quieras mostrar en tu aplicación.  
+Para que te sea más fácil la aplicación ya incluye todo lo que está en la [semilla estática](https://github.com/podemosaprender/tpl_app_semilla_estatico). Podés empezar simplemente modificando el archivo cordova_main.js.
+2. Comprimí los archivos que modificaste o agregaste en un .zip
+3. Subilo con el botón que te ofrece está pagina.
+4. Un par de minutos después aparecerá un link para que bajes tu paquete instalador .apk
+`}
+}
+
+function apkStatus_ui(isUploading) { //U: muestra el status del apk
+	var r= [];
+	if (apkData)  {
+
+		var buildInfo= (apkData.src || apkData.apk);
+		var apkUrl= buildInfo && SEMILLA_APK_URL+'/'+buildInfo.path;
+		var apkLink= buildInfo && {cmp: 'a', children: 'aquí', href: SEMILLA_APK_URL+'/'+buildInfo.path, target: '_blank'};
+
+		if (apkData.apk) {
+			r.push(['Tu aplicación ya está lista para descargar ',apkLink]);
+		}
+		else if (apkData.src) {
+			r.push([ 'Tu apk se está construyendo. Hay '+ apkData.src.q +' antes que el tuyo en la fila.	Lo vas a poder descargar de ', apkLink]);
 		}
 
-		if (act=='1up' && errors.length==0) {
-			if (my.state.data==null || my.state.data.length<1) {
-				errors.push('Debe elegir un zip con los archivos para la aplicación');
+		r.push(	
+			isUploading	
+				? 'Se está subiendo tu archivo '+apkData.srcName
+				: 
+				(apkData.src || apkData.apk)
+				? 'Tu archivo '+apkData.srcName+' se subió '+new Date(apkData.upload_t)
+				: 'No sabemos si tu archivo '+apkData.srcName+' se subió'
+		);
+	}
+	return r.map(p => ({cmp: 'Message', children: p}))
+}
+
+ErrorToText= {
+	'NO_DATA': 'Rententá por favor, no sabemos si tu archivo se subió',
+}
+
+apkSrcFileNameLast='';
+function scr_semillaApk(my) {
+	function handleBuildStatus(data,maybeError) {
+		if (maybeError) { 
+			var errorMsg= null;
+			if (typeof(maybeError)=='object') {
+				if (!data) { errorMsg= 'Error conectando al servidor'};
 			}
 			else {
-				my.setState({'act': 'wait_up'});
-
-				data.data= my.state.data[0];
-				data.cmd= "fromZip";
-				data.pipe= "FormParams";
-
-				mirequest_p(SEMILLA_APK_URL+'/app/cx/', data)
-				.then( () => my.setState({'act':'2to_build'}) )
-				.catch( () => my.setState({'act':'1to_src'}) )
+				errorMsg= ErrorToText[maybeError] || maybeError;
 			}
+			if (errorMsg) {
+				apksrvStatusPollStop();
+				my.setState({error: errorMsg});
+			}
+		} 
+		else if (data) {
+			if (my.state.isUploading) { //A: si estaba subiendo, pedir mas updates
+				apksrvStatusPollStart(handleBuildStatus,true);
+			}
+			my.setState({error: null});
 		}
-		else if (act=='2build' && errors.length==0) {
-			my.setState({'act': 'wait_build'});
-			data.cmd= "fromZipBuild";
+		my.setState({isUploading: false}); //A: siempre es verdad que terminamos de subir
+		my.refresh();
+	}
 
-			mirequest_p(SEMILLA_APK_URL+'/app/cx/', data)
-			.then( () => my.setState({'act':'3to_dld'}) )
-			.catch( () => my.setState({'act':'2to_build'}) )
+	function pollBuildStatus() {
+		if (!apkData.apk) { //A: subio pero no consiguio apk
+			apksrvStatusPollStart(handleBuildStatus,true); 
 		}
+	}
 
-		console.log("XXX",apkData);
-		var btn= [
-			my.toSet('act','1up',{cmp: 'Step', children: 'Subir fuentes', completed: act[0]>'1'}),
-			my.toSet('act','2build',{cmp: 'Step', children: 'Construir apk', completed: act[0]>'2', disabled: !(act[0]>='2')}),
-			my.toSet('act','3dld',{cmp: 'Step', children: 'Descargar apk', href: apkData && SEMILLA_APK_URL+'/'+apkData.path, disabled: !(act[0]>='3')}),
-		];
+	my.componentWillMount= function () { 
+		apksrvRestorePersistent(); 
+		if (apkData) { //A: no es la primera vez
+			if (apkData.src || apkData.apk) { pollBuildStatus(); }
+			else { my.state.error= ErrorToText['NO_DATA']; }
+		}
+		else { my.state.wantsInstructions= true; }//A: si nunca uso
+	}
+
+	my.render= function () { //DBG: console.log("semillaApk render",XX=my);
+		var srcName= get_p(my,"{state{data[0{name");
+		if (srcName && srcName != apkSrcFileNameLast) { apkSrcFileNameLast= srcName;
+			console.log("Subir archivo nuevo",srcName);
+			my.setState({isUploading: true, error: null});
+			apksrv1uploadZip(my.state.data[0], true, handleBuildStatus); //U: subir, guardar apkData persistente
+		}
 
 		return [
 			{cmp: 'PaMenuYCerrar'},	
-			{cmp: 'Segment', children: [
-				{cmp: 'Dimmer', active: act.startsWith('wait'), children: {cmp: 'Loader', children: 'Procesando'}},
-				{cmp: 'Form', children: [
-					my.forValue('usr',{label: 'Usuario', error: !(act=='' || my.state.usr>'')}),
-					my.forValue('app',{label: 'App', error: !(act=='' || my.state.usr>'')}),
-					my.forValue('data',{cmp:'InputFile', accept: '.zip', content: 'Fuentes www', error: !(act=='' || my.state.data!=null)}),
-					errors.length ? {cmp: 'Message', negative: true, children: errors.map(e=> ({cmp:'p',children: e}))} : null,
-					(apkData && apkData.fh) ? {cmp: 'Message', children: ['Existe un ',{cmp: 'a', children: 'apk previo', href: SEMILLA_APK_URL+'/'+apkData.path, target: '_blank'}, ' del ', new Date(apkData.fh)+'']} : null,
 
-					{cmp: 'Container', textAlign: 'right', style: {marginTop: '10px'}, 
-					 children: {cmp: 'Step.Group', ordered: true, children: btn}}
-				]},
-			]}
+			{cmp: 'Container', as: 'div', children: [
+				my.state.wantsInstructions && instrucciones_ui(),
+			]},
+			{cmp: 'Container', children: [
+				my.state.error && {cmp: 'Message', negative: true, children: my.state.error},
+				apkStatus_ui(my.state.isUploading),
+			]},
+
+			{cmp: 'Container', style: 'padding: 10px', children: [
+					{cmp: 'Button', onClick: ()=> (my.file_cmp.click()), children: 'Subir nuevo .zip', floated: 'right'},	
+					my.forValue('data',{cmp:'InputFile', accept: '.zip', cref: fRef('{file_cmp',my)}),
+
+					my.state.wantsInstructions ||  my.toSet('wantsInstructions',true,{children: 'Leer instrucciones', floated: 'right'}),
+			]},
+
 		];
-
 	}
 }
