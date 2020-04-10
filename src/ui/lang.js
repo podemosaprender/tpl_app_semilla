@@ -122,17 +122,5 @@ function encontrarHermanos() {
 	return r;
 }
 
-SlidesSrc=`
-= Slides : kv
-setpk Slides Intro exto "
-# ¿Cómo _dominar_ la computación?
-
-Quiero aprender lo más:
-
-* general
-* breve
-* fácil de aprender
-
-"
-`
+SlidesSrc= await get_url_p('slides.rtl');
 evalRtl(SlidesSrc);
