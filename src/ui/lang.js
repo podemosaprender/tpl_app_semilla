@@ -1,14 +1,28 @@
 set_logLvlMax(1);
 loadJs_withTag_p('/node_modules/microlight/microlight.js');
+
+function codeTryEval(e) {
+	var src= e.innerText;
+	//DBG: console.log("codeTryEval",e.innerText);
+	try { var r= eval(src); alert("Resultado:\n"+ser_json(r,1)); return true; }
+	catch (ex) { alert("No se puede evaluar"); console.error("codeTryEval",ex,src); }
+}
+
 miHiglighter= function(code, language) {
 		console.log("HIGLIGHT",language,code);
 		setTimeout(()=> { microlight.reset(); },100);  //XXX:buscar algo con api MENOS horrible
-    return '<code class="microlight" style="color: rgba(0,0,0,90);">'+code+'</code>';
+    return '<code class="microlight" style="color: rgba(0,0,0,90);" onclick="codeTryEval(this)">'+code+'</code>';
 }
 
+
 loadJs_withTag_p('/node_modules/react-simple-code-editor/browser.js');
+myRenderer= new marked.Renderer();
+myRenderer.codespan= function (txt) {
+	return '<code class="microlight" style="color: rgba(0,0,0,90);" onclick="codeTryEval(this)">'+txt+'</code>';
+}
 marked.setOptions({
-	 highlight: miHiglighter,
+	highlight: miHiglighter,
+	renderer: myRenderer,	
 });
 
 xsrc=`

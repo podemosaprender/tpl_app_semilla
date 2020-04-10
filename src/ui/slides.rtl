@@ -1,11 +1,67 @@
+
 = Slides : kv
 setpk Slides Intro texto "
+# Objetivo de hoy
+
+* Presentar mejor esta idea a _principiantes_
+* Usando tus impresiones y consejos
+
 # ¿Cómo _dominar_ la computación?
 
 Quiero aprender lo más:
 
-* general
-* breve
+* general (poder hacer más cosas)
+* breve (tenerlo en la cabeza)
 * fácil de aprender
+
+# ¿Una máquina de hacer ... qué?
+
+¿Cómo pensamos en la computadora?
+
+* Una cajonera
+   * Un millon de cajones por cada Giga de RAM.
+   * Que se llenan con los bytes de imágenes, audio, videos, textos.
+* Una máquina de aplicar reglas
+   * Le hago dos clicks al nombre del video y me lo muestra en la pantalla.
+   * Lo arrastro a otra _cajonera_ ej. un pendrive y hace una copia.
+   * Puedo sumar, restar, multiplicar, etc.
+
+# ¿Querés cosas que _funcionen_? _¡Alistate!_
+
+O sea, aprendé todo lo que se puede hacer con
+* listas
+* funciones (un mapa o fórmula que relaciona preguntas con respuestas)
+
+Porque los _programas_ son
+* listas (ej. bytes, palabras)
+* que llaman funciones (ej. sumar, leer del disco)
+* para transformar unas listas (ej. lo que escribis, una planilla)
+* en otras listas (ej. lo que mandás a la impresora, los _cuadritos_ de un video)
+
+*¿Se pueden hacer programas que escriban otros programas?*
+
+# Un ejemplo _familiar:
+
+### Una _Base de Datos_ / Tabla / Planilla
+~~~ rtl db
+Mau esHijoDe Mary
+Pablo esHijoDe Mary
+Fede esHijoDe Pablo
+~~~
+
+### Reglas
+* ¿Cómo se quién es sobrino de quién?
+* ¿Cómo se quién es abuela de quién?
+
+# Los materiales que podemos usar
+
+* Un texto se escribe así `'Hola mundo'`
+* Una lista se escribe así `['Mau','esHijoDe','Mary']`
+* Puedo hacer listas de listas `[['Mau','esHijoDe','Mary'],['Pablo','esHijoDe','Mary']]`
+* Ponerle nombre a las _cosas_ como `miCajonA= 'Mau'`
+* y usar el nombre en vez de escribir todo de nuevo `[miCajonA,'esHijoDe','Mary']`
+* Preguntar el i-ésimo elemento de una lista `['A','B','C'][1]` -> 'B'
+* Preguntar cuantos elementos tiene una lista `['A','B','C'].length` -> 3
+* Comparar elementos con `==`, `>`, etc. `['A','B','C'][1]=='B'` -> true
 
 "
