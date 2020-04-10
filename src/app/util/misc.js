@@ -57,7 +57,7 @@ function funcionComoA(funcionQueDevuelveResultado,noQuiereCopiaArgs) { //D: envu
 	}
 }
 
-const STREAM_END= {};
+STREAM_END= {};
 function runBg(f) { setTimeout(f,0); }
 function fRunDelay(dt,f) { f(); }
 function fold(o,f,acc,wantsSorted) {try{

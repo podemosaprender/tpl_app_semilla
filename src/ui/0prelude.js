@@ -4,19 +4,23 @@ GLOBAL= window; //U: para acceder a todo lo definido
 
 /************************************************************************** */
 //S: utiles
-function loadJs(url) { //U: cargar js desde js, OjO! seguridad y eval ...
-	console.log("loadJs",url);
+function get_url_p(url) { //U: cargar js desde js, OjO! seguridad y eval ...
+	//DBG console.log("get_url_p",url);
 	var proto= (url.match(/^([^:]+):/)||[])[1] || (runtimeEnv=='cordova' ? 'file' : 'http');
 	//A: calculamos que protocolo usar, puede venir SIN proto!
 	
 	var loadp= (proto=='file' || proto=='cdvfile')
 		? get_file_p(url,'txt')
-		: fetch(url).then(r => r.text())
-	
+		: fetch(url).then(r => r.text());
+	return loadp;
+}
+
+function loadJs(url) { //U: cargar js desde js, OjO! seguridad y eval ...
+	var loadp= get_url_p(url);
 	return loadp.then(t => {
 		//DBGconsole.log("loadJs then",url,t);
 		var src= xfrmJsToGlobals(t,url);
-		//DBG console.log(url,src);
+		//DBG console.log(url,src); XXSRC=src;
 		var p= eval(src); //A: devuelve una promesa
 		return p;
 	});
@@ -204,7 +208,9 @@ function cmp() { //U: elemento "si adivina" que tipo
 	//A: si cmp era el path a uno en Cmp, pusimos el objeto
 	//DBG console.log("cmp Z",d.kv);
 
-	return h(d.kv.cmp || d.f || Cmp.Fragment, d.kv.cmp ? d.kv : {children: d.kv.children});
+	var hArgs= [d.kv.cmp || d.f || Cmp.Fragment, d.kv.cmp ? d.kv : {children: d.kv.children}];
+	//DBG: console.log(hArgs);
+	return h.apply(this, hArgs);
 }
 
 function appGoTo(route) { //U: navega a una ruta
@@ -348,7 +354,7 @@ function AppStart(theme, wantsRestart) { //U: inicia la app!
 	CmpDefAuto();
 	if (wantsRestart || !Routes['/']) { //A: no hay main, tomar la ultima funcion
 		var main_k=null;
-		Object.keys(Cmp).map(k => { if (k.match(/scr_/)) { main_k= k }});
+		Object.keys(Cmp).map(k => { if (k.match(/scr_/) && k!="scr_AppReload") { main_k= k }});
 		console.log("AppStart main inferred "+main_k);
 		Routes['/']= {cmp: Cmp[main_k]};
 		//A: dejamos como main la ultima scr_ que se definion

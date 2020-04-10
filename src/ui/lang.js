@@ -3,7 +3,7 @@ loadJs_withTag_p('/node_modules/microlight/microlight.js');
 miHiglighter= function(code, language) {
 		console.log("HIGLIGHT",language,code);
 		setTimeout(()=> { microlight.reset(); },100);  //XXX:buscar algo con api MENOS horrible
-    return '<code class="microlight" style="color: rgba(0,0,0,90);">'+code+'</div>';
+    return '<code class="microlight" style="color: rgba(0,0,0,90);">'+code+'</code>';
 }
 
 loadJs_withTag_p('/node_modules/react-simple-code-editor/browser.js');
@@ -53,11 +53,16 @@ function scr_lang(my) {
 		return [{cmp: 'Markdown', children: `
 # La computación ésta lista
 
+${Slides.Intro.texto}
+
 Puedo poner \`codigo aca\` sin problemas?
 
-\`\`\`
+~~~
 ${xsrcJs}
-\`\`\`
+~~~
+
+Entiende que esto no es código?
+
 `},
 	{cmp: CodeEditorSimple.default, value: my.state.code, highlight: miHiglighter, onValueChange: v => my.setState({code: v}), style: { background: 'white', color: 'transparent', caretColor: 'green', fontFamily: 'monospace'}},
 	];
@@ -87,9 +92,10 @@ SaveNames.forEach(n => {GLOBAL[n]= SaveDef[n]});
 Db= toArrays(parse(xsrcDb)).slice(1);
 console.log("Listo!");
 
+
 SrcProducto=`
 FunTop paraProducto : listas conCadaUno anteriores
-	fold_e
+	fold_e	
 		first listas
 		. elemento	
 		if (< 1 (length listas))
@@ -115,3 +121,18 @@ function encontrarHermanos() {
 	paraProducto([Db,Db], (A,B) => sonHermanosP(A,B) && r.push([A[0],'esHermano',B[0]]));
 	return r;
 }
+
+SlidesSrc=`
+= Slides : kv
+setpk Slides Intro exto "
+# ¿Cómo _dominar_ la computación?
+
+Quiero aprender lo más:
+
+* general
+* breve
+* fácil de aprender
+
+"
+`
+evalRtl(SlidesSrc);
