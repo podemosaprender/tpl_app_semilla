@@ -14,7 +14,7 @@ SEMILLA_APK_URL='https://semilla-apk.herokuapp.com'; //U: url del servidor
 //2: podes preguntar si ya esta listo, en la respuesta la clave apk te dice que si, la clave src cuanto te falta
 // curl "$HOST/app/cx/stsFor?pipe=FormParams&cmd=stsFor&path=$X"
 
-APKSRV_STATUS_POLL_DT= 2*1000; //U: cada cuanto consultar al servidor si ya esta listo (ms)
+APKSRV_STATUS_POLL_DT= 20*1000; //U: cada cuanto consultar al servidor si ya esta listo (ms)
 
 apkData= null; //U: ultima respuesta del servidor
 apkSrcFile= null; //U: me lo guardo para debug/probar desde la consola
@@ -92,19 +92,27 @@ Para que te sea más fácil la aplicación ya incluye todo lo que está en la [s
 `}
 }
 
+XXforceAudio= false
+apkStatus_prev= null;
 function apkStatus_ui(isUploading) { //U: muestra el status del apk
 	var r= [];
+	var justReady= false;
 	if (apkData)  {
-
 		var buildInfo= (apkData.src || apkData.apk);
 		var apkUrl= buildInfo && SEMILLA_APK_URL+'/'+buildInfo.path;
 		var apkLink= buildInfo && {cmp: 'a', children: 'aquí', href: SEMILLA_APK_URL+'/'+buildInfo.path, target: '_blank'};
 
 		if (apkData.apk) {
 			r.push(['Tu aplicación ya está lista para descargar ',apkLink]);
+			justReady= (apkStatus_prev=='src');
+			apkStatus_prev= null;
 		}
 		else if (apkData.src) {
+			apkStatus_prev= 'src';
 			r.push([ 'Tu apk se está construyendo. Hay '+ apkData.src.q +' antes que el tuyo en la fila.	Lo vas a poder descargar de ', apkLink]);
+		}
+		else {
+			apkStatus_prev= null;
 		}
 
 		r.push(	
@@ -116,7 +124,16 @@ function apkStatus_ui(isUploading) { //U: muestra el status del apk
 				: 'No sabemos si tu archivo '+apkData.srcName+' se subió'
 		);
 	}
-	return r.map(p => ({cmp: 'Message', children: p}))
+	var rcmp= r.map(p => ({cmp: 'Message', children: p}));
+	if (justReady || XXforceAudio) {
+		rcmp.push({	
+			cmp: 'audio',
+			src: "https://ia800300.us.archive.org/20/items/CallToThePostFirstCall_379/first_call.ogg",
+			autoplay: true,
+			style: {width: '0px', height: '0px'},
+		});
+	}
+	return rcmp;
 }
 
 ErrorToText= {
@@ -126,6 +143,7 @@ ErrorToText= {
 apkSrcFileNameLast='';
 function scr_semillaApk(my) {
 	function handleBuildStatus(data,maybeError) {
+		console.log("handleBuildStatus",data,maybeError);
 		if (maybeError) { 
 			var errorMsg= null;
 			if (typeof(maybeError)=='object') {
@@ -139,10 +157,9 @@ function scr_semillaApk(my) {
 				my.setState({error: errorMsg});
 			}
 		} 
-		else if (data) {
-			if (my.state.isUploading) { //A: si estaba subiendo, pedir mas updates
-				apksrvStatusPollStart(handleBuildStatus,true);
-			}
+
+		if (!errorMsg && data) {
+			pollBuildStatus();
 			my.setState({error: null});
 		}
 		my.setState({isUploading: false}); //A: siempre es verdad que terminamos de subir
@@ -150,10 +167,12 @@ function scr_semillaApk(my) {
 	}
 
 	function pollBuildStatus() {
+		console.log("XX pollBuildStatus",apkData);
 		if (!apkData.apk) { //A: subio pero no consiguio apk
 			apksrvStatusPollStart(handleBuildStatus,true); 
 		}
 	}
+
 
 	my.componentWillMount= function () { 
 		apksrvRestorePersistent(); 
