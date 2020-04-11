@@ -125,7 +125,7 @@ ensure_var= function(k,v,scope) { //D: ensure k exists in scope initializing wit
 }
 
 GLOBAL= ensure_var("GLOBAL",this,this);
-LogLvlMax= GLOBAL.LogLvlMax || 9; //DFLT //U:solo se loguean mensajes con nivel MENOR o IGUAL que este
+LogLvlMax= GLOBAL.LogLvlMax || 1; //DFLT //U:solo se loguean mensajes con nivel MENOR o IGUAL que este
 LogLvlAlertMax= GLOBAL.LogLvlAlertMax || 0;
 
 set_logLvlMax= function (lvl) { LogLvlMax= lvl; }
