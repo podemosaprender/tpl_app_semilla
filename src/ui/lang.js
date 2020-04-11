@@ -65,18 +65,7 @@ function scr_lang(my) {
 
 	my.render= function () { 
 		return [{cmp: 'Markdown', children: `
-# La computación ésta lista
-
 ${Slides.Intro.texto}
-
-Puedo poner \`codigo aca\` sin problemas?
-
-~~~
-${xsrcJs}
-~~~
-
-Entiende que esto no es código?
-
 `},
 	{cmp: CodeEditorSimple.default, value: my.state.code, highlight: miHiglighter, onValueChange: v => my.setState({code: v}), style: { background: 'white', color: 'transparent', caretColor: 'green', fontFamily: 'monospace'}},
 	];
@@ -106,35 +95,6 @@ SaveNames.forEach(n => {GLOBAL[n]= SaveDef[n]});
 Db= toArrays(parse(xsrcDb)).slice(1);
 console.log("Listo!");
 
-
-SrcProducto=`
-FunTop paraProducto : listas conCadaUno anteriores
-	fold_e	
-		first listas
-		. elemento	
-		if (< 1 (length listas))
-			paraProducto 	
-				rest listas
-				. conCadaUno
-				concat anteriores (array elemento)
-			ApplyCb conCadaUno : concat anteriores (array elemento)
-`
-
-evalRtl(SrcProducto);
-
-function sonHermanosP(hechoA,hechoB) {
-	return (
-		hechoA[0] != hechoB[0] 	
-		&& hechoA[1]=="hijoDe" && hechoB[1]=="hijoDe"
-		&& hechoA[2]==hechoB[2]
-	)
-}
-
-function encontrarHermanos() {
-	var r= [];
-	paraProducto([Db,Db], (A,B) => sonHermanosP(A,B) && r.push([A[0],'esHermano',B[0]]));
-	return r;
-}
 
 SlidesSrc= await get_url_p('slides.rtl');
 evalRtl(SlidesSrc);

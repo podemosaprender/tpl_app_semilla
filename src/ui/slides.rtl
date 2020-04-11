@@ -1,6 +1,68 @@
+= Src : kv
+setk Src Db "
+Mau hijoDe Mary
+Pablo hijoDe Mary
+Fede hijoDe Pablo
+"
+
+(= Db (rest (toArrays (parse (getk Src Db)))))
+
+setk Src ProductoRtl "
+FunTop conProductoDeListas : listas conCadaUno acc anteriores 
+	return 
+		fold_e	
+			first listas
+			. elemento	
+			if (< 1 (length listas))
+				return
+					conProductoDeListas	
+						rest listas
+						. conCadaUno
+						. acc
+						concat anteriores (array elemento)
+				return
+					ApplyCb conCadaUno (concat (array acc) (concat anteriores (array elemento))) 
+"
+
+setk Src SonHermanosJs "
+sonHermanosP= (datoA,datoB) => 
+		datoA[1]==\"hijoDe\" //A: el dato A es 'hijoDe'
+		&& datoB[1]==\"hijoDe\" //A: el dato B es 'hijoDe'
+		&& datoA[2]==datoB[2] //A: son hijos de la misma persona
+		&& datoA[0] != datoB[0] //A: no son la misma persona	
+"
+
+setk Src AgregarSiSonHermanosJs "
+agregarSiSonHermanos= (acc, A,B) => (sonHermanosP(A,B) ? push(acc, [ A[0], 'hermanoDe', B[0] ]) : acc);
+"
+
+setk Src EncontrarHermanosJs "
+function agregarTodosLosHermanos(acc) {
+	return conProductoDeListas([Db,Db], agregarSiSonHermanos);
+}
+"
+
+setk Src EsSobrinoJs "
+esSobrinoP= (A,B) => 
+		A[1]==\"hijoDe\" 
+		&& B[1]==\"hermanoDe\" 
+		&& A[2]==B[2] //A: el que es hermano en A tambien es padre en B
+"
+
+setk Src AgregarSiEsSobrinoJs "
+agregarSiEsSobrino= (acc, A,B) => (esSobrinoP(A,B) ? push(acc, [ A[0], 'sobrinoDe', B[0] ]) : acc);
+"
+
+
+
+(fold_e Src e 
+	(if* 
+		(match_str_re e_k "Js") (eval (xfrmJsToGlobals e))
+		(match_str_re e_k "Rtl") (evalRtl e)))
+;------------------------------------------------------------
 
 = Slides : kv
-setpk Slides Intro texto "
+setpk Slides Intro texto (+ "
 # Objetivo de hoy
 
 * Presentar mejor esta idea a _principiantes_
@@ -40,28 +102,117 @@ Porque los _programas_ son
 
 *¿Se pueden hacer programas que escriban otros programas?*
 
-# Un ejemplo _familiar:
+# Un ejemplo _familiar_
 
 ### Una _Base de Datos_ / Tabla / Planilla
 ~~~ rtl db
-Mau esHijoDe Mary
-Pablo esHijoDe Mary
-Fede esHijoDe Pablo
+"
+
+Src.Db
+
+"
 ~~~
 
 ### Reglas
 * ¿Cómo se quién es sobrino de quién?
 * ¿Cómo se quién es abuela de quién?
 
-# Los materiales que podemos usar
+# Los materiales que podemos usar (primitivas)
 
 * Un texto se escribe así `'Hola mundo'`
 * Una lista se escribe así `['Mau','esHijoDe','Mary']`
 * Puedo hacer listas de listas `[['Mau','esHijoDe','Mary'],['Pablo','esHijoDe','Mary']]`
-* Ponerle nombre a las _cosas_ como `miCajonA= 'Mau'`
-* y usar el nombre en vez de escribir todo de nuevo `[miCajonA,'esHijoDe','Mary']`
+* Ponerle nombre a las _cosas_ como `miNombre= 'Mau'`
+* y usar el nombre en vez de escribir todo de nuevo `[miNombre,'esHijoDe','Mary']`
 * Preguntar el i-ésimo elemento de una lista `['A','B','C'][1]` -> 'B'
 * Preguntar cuantos elementos tiene una lista `['A','B','C'].length` -> 3
 * Comparar elementos con `==`, `>`, etc. `['A','B','C'][1]=='B'` -> true
 
+# Nuestro programa (ej. en javascript)
+
+## Nuestra _base de datos_ es una lista de listas
+~~~
+Db= " (ser_json Db 1)
 "
+~~~
+
+## Una función que dice si de dos datos descubrimos hermanos
+~~~
+"
+Src.SonHermanosJs
+"
+~~~
+
+por ejemplo puedo preguntar para `Db[0]`,  `Db[1]`,  para `Db[2]`, 
+
+~~~
+sonHermanosP(Db[0],Db[1])
+~~~
+
+me dice que sí (`true`)
+
+~~~
+sonHermanosP(Db[1],Db[2])
+~~~
+
+me dice que no (`false`)
+
+_¿Qué comparaciones faltan hacer? ¿Cuantas serían para una base de 100 datos en vez de 3?_
+
+## Funciones que llaman tus funciones
+
+Para saber quienes son hermanos necesitas probar todos los pares de datos.
+
+Para eso escribí `conProductoDeListas` que recibe
+
+* una lista de listas
+* una función para llamar con
+   * un _acumulador_, para que la función pueda acumular información
+   * un dato de cada lista, para que reciba todas las combinaciones
+
+Por ej. simplemente juntar 
+~~~
+juntarTodasLasCombinaciones= (acc,d1,d2) => push(acc,[d1,d2]) 
+conProductoDeListas([['A','B',],[10,20,30]], juntarTodasLasCombinaciones, [])
+~~~
+
+## Agregar los hermanos a la Db
+
+Usando la misma funcion para probar todas las combinaciones de datos de la Db puedo agregar la información que deduje sobre quienes son hermanos ...
+~~~
+"
+Src.AgregarSiSonHermanosJs
+
+"
+DbSoloHermanos= conProductoDeListas([Db,Db], agregarSiSonHermanos, [])
+~~~
+
+Y ahora podría _aumentar_ mi base de datos con esos datos nuevos ...
+
+~~~
+DbConHermanos= Db.concat(DbSoloHermanos);
+~~~
+
+_¿Cómo agregarías los sobrinos?_
+
+## Agregar los sobrinos
+
+La pregunta es muy parecida a la anterior
+~~~
+"
+Src.EsSobrinoJs
+"
+~~~
+
+Y recorrer los pares de datos más parecido todavía
+~~~
+"
+Src.AgregarSiEsSobrinoJs
+
+"
+DbSoloSobrinos= conProductoDeListas([DbConHermanos,DbConHermanos], agregarSiEsSobrino, [])
+~~~
+
+"
+
+)
